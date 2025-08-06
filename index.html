@@ -1,16 +1,1247 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SARA - Intelligent Soil Analysis Dashboard</title>
+    <title>AgroSmart - Analyse de Sol Intelligent</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics-compat.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="app">
-        <!-- Your single-page application content will be loaded here by script.js -->
-    </div>
+    <!-- Navigation Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-seedling"></i>
+            </div>
+            <div>
+                <div class="logo-text">AgroSmart</div>
+                <div class="logo-subtext">Analyse de sol intelligent</div>
+            </div>
+        </div>
+        
+        <div class="nav-links">
+            <div class="nav-item active" data-page="dashboard">
+                <i class="fas fa-home"></i>
+                <span class="nav-text">Tableau de bord</span>
+            </div>
+            <div class="nav-item" data-page="history">
+                <i class="fas fa-history"></i>
+                <span class="nav-text">Historique</span>
+            </div>
+            <div class="nav-item" data-page="recommendations">
+                <i class="fas fa-lightbulb"></i>
+                <span class="nav-text">Recommandations</span>
+                <span class="badge">3</span>
+            </div>
+            <div class="nav-item" data-page="settings">
+                <i class="fas fa-cog"></i>
+                <span class="nav-text">Paramètres</span>
+            </div>
+            <div class="nav-item" data-page="analytics">
+                <i class="fas fa-chart-line"></i>
+                <span class="nav-text">Analytiques</span>
+            </div>
+            <div class="nav-item" data-page="alerts">
+                <i class="fas fa-bell"></i>
+                <span class="nav-text">Alertes</span>
+                <span class="badge">2</span>
+            </div>
+        </div>
+        
+        <div class="logout">
+            <div class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="logout-text">Déconnexion</span>
+            </div>
+        </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Authentication UI (initially hidden) -->
+        <div id="auth-ui" class="auth-container">
+            <h2 class="auth-title"><i class="fas fa-seedling"></i> AgroSmart</h2>
+            <p class="auth-subtitle">Analyse intelligente de sol pour agriculteurs</p>
+            
+            <div id="login-form" class="auth-form">
+                <h3>Connexion</h3>
+                <div class="form-group">
+                    <input type="email" id="login-email" class="form-input" placeholder="Email">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="login-password" class="form-input" placeholder="Mot de passe">
+                </div>
+                <button id="login-btn" class="btn btn-primary">Se connecter</button>
+                <div class="auth-toggle" id="show-register">Pas de compte? <span>Créer un compte</span></div>
+                <div id="auth-error" class="firebase-error" style="display: none;"></div>
+            </div>
+            
+            <div id="register-form" class="auth-form" style="display: none;">
+                <h3>Créer un compte</h3>
+                <div class="form-group">
+                    <input type="text" id="register-name" class="form-input" placeholder="Nom complet">
+                </div>
+                <div class="form-group">
+                    <input type="email" id="register-email" class="form-input" placeholder="Email">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="register-password" class="form-input" placeholder="Mot de passe">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="register-confirm" class="form-input" placeholder="Confirmer mot de passe">
+                </div>
+                <button id="register-btn" class="btn btn-primary">S'inscrire</button>
+                <div class="auth-toggle" id="show-login">Déjà un compte? <span>Se connecter</span></div>
+                <div id="register-error" class="firebase-error" style="display: none;"></div>
+            </div>
+        </div>
+        
+        <!-- Loading Spinner -->
+        <div id="loading" class="spinner" style="display: none;"></div>
+        
+        <!-- Application UI (initially hidden) -->
+        <div id="app-ui" style="display: none;">
+            <!-- Header -->
+            <header class="header">
+                <h1 class="page-title"><i class="fas fa-home"></i> Tableau de bord</h1>
+                <div class="user-controls">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Rechercher...">
+                    </div>
+                    <div class="user-profile">
+                        <div class="user-avatar" id="user-avatar">AG</div>
+                        <div class="user-name" id="user-name">Agriculteur</div>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Dashboard Page -->
+            <section id="dashboard" class="page active">
+                <!-- Cards -->
+                <div class="cards-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Azote (N)</div>
+                            <div class="card-icon">
+                                <i class="fas fa-leaf"></i>
+                            </div>
+                        </div>
+                        <div class="card-value" id="nitrogen-value">128 mg/kg</div>
+                        <div class="card-status status-optimal">Optimal</div>
+                        <div class="card-trend">
+                            <i class="fas fa-arrow-up trend-up"></i>
+                            <span>2.5% depuis hier</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Phosphore (P)</div>
+                            <div class="card-icon">
+                                <i class="fas fa-mountain"></i>
+                            </div>
+                        </div>
+                        <div class="card-value" id="phosphorus-value">42 mg/kg</div>
+                        <div class="card-status status-warning">Moyen</div>
+                        <div class="card-trend">
+                            <i class="fas fa-arrow-down trend-down"></i>
+                            <span>1.2% depuis hier</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Potassium (K)</div>
+                            <div class="card-icon">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                        </div>
+                        <div class="card-value" id="potassium-value">175 mg/kg</div>
+                        <div class="card-status status-optimal">Optimal</div>
+                        <div class="card-trend">
+                            <i class="fas fa-arrow-up trend-up"></i>
+                            <span>3.1% depuis hier</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Température</div>
+                            <div class="card-icon">
+                                <i class="fas fa-thermometer-half"></i>
+                            </div>
+                        </div>
+                        <div class="card-value" id="temperature-value">24.3°C</div>
+                        <div class="card-status status-optimal">Optimal</div>
+                        <div class="card-trend">
+                            <i class="fas fa-arrow-up trend-up"></i>
+                            <span>0.8°C depuis hier</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Humidité</div>
+                            <div class="card-icon">
+                                <i class="fas fa-tint"></i>
+                            </div>
+                        </div>
+                        <div class="card-value" id="humidity-value">63%</div>
+                        <div class="card-status status-optimal">Optimal</div>
+                        <div class="card-trend">
+                            <i class="fas fa-arrow-down trend-down"></i>
+                            <span>2% depuis hier</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">pH</div>
+                            <div class="card-icon">
+                                <i class="fas fa-flask"></i>
+                            </div>
+                        </div>
+                        <div class="card-value" id="ph-value">6.1</div>
+                        <div class="card-status status-warning">Légèrement acide</div>
+                        <div class="card-trend">
+                            <i class="fas fa-minus"></i>
+                            <span>Stable</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Nouvelle carte pour les données externes -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Météo actuelle</div>
+                            <div class="card-icon">
+                                <i class="fas fa-cloud-sun"></i>
+                            </div>
+                        </div>
+                        <div class="weather-info">
+                            <div class="weather-icon">
+                                <i class="fas fa-sun"></i>
+                            </div>
+                            <div class="weather-details">
+                                <div class="weather-temp" id="current-temp">24°C</div>
+                                <div class="weather-desc" id="weather-desc">Ensoleillé</div>
+                                <div class="weather-stats">
+                                    <div class="weather-stat">
+                                        <i class="fas fa-wind"></i>
+                                        <span id="wind-speed">12 km/h</span>
+                                    </div>
+                                    <div class="weather-stat">
+                                        <i class="fas fa-tint"></i>
+                                        <span id="humidity">65%</span>
+                                    </div>
+                                    <div class="weather-stat">
+                                        <i class="fas fa-cloud-rain"></i>
+                                        <span id="precipitation">10%</span>
+                                    </div>
+                                    <div class="weather-stat">
+                                        <i class="fas fa-sun"></i>
+                                        <span id="uv-index">Modéré</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Prix du marché</div>
+                            <div class="card-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                        </div>
+                        <div class="market-prices" id="market-prices">
+                            <!-- Les prix seront injectés dynamiquement ici -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Charts -->
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h2 class="chart-title">Évolution des paramètres NPK</h2>
+                            <div class="chart-actions">
+                                <button class="chart-btn"><i class="fas fa-sync-alt"></i></button>
+                                <button class="chart-btn"><i class="fas fa-expand"></i></button>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="npk-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h2 class="chart-title">Évolution de la température et humidité</h2>
+                            <div class="chart-actions">
+                                <button class="chart-btn"><i class="fas fa-sync-alt"></i></button>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="temp-humidity-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recommendations -->
+                <h2 class="section-title">
+                    <i class="fas fa-lightbulb"></i>
+                    Recommandations de cultures
+                </h2>
+                <p class="section-subtitle">Basé sur l'analyse de votre sol, voici les cultures les plus adaptées :</p>
+                
+                <div class="crops-grid">
+                    <!-- Crop 1 -->
+                    <div class="crop-card">
+                        <div class="crop-header">
+                            <div class="crop-name">Tomate</div>
+                            <div class="success-rate">92%</div>
+                        </div>
+                        <div class="crop-content">
+                            <div class="crop-parameter">
+                                <span class="param-label">Climat:</span>
+                                <span class="param-value">Tempéré</span>
+                            </div>
+                            <div class="crop-parameter">
+                                <span class="param-label">Sol idéal:</span>
+                                <span class="param-value">Léger, bien drainé</span>
+                            </div>
+                            <div class="crop-parameter">
+                                <span class="param-label">Saison:</span>
+                                <span class="param-value">Printemps-Été</span>
+                            </div>
+                            <div class="crop-parameter">
+                                <span class="param-label">pH optimal:</span>
+                                <span class="param-value">5.5 - 6.8</span>
+                            </div>
+                            
+                            <div class="recommendations">
+                                <h4><i class="fas fa-tasks"></i> Recommandations:</h4>
+                                <ul>
+                                    <li>Ajouter du compost pour améliorer la structure du sol</li>
+                                    <li>Appliquer un engrais riche en phosphore pour favoriser la floraison</li>
+                                    <li>Maintenir une humidité constante autour de 60-70%</li>
+                                    <li>Contrôler régulièrement le pH et ajuster si nécessaire</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Crop 2 -->
+                    <div class="crop-card">
+                        <div class="crop-header">
+                            <div class="crop-name">Maïs</div>
+                            <div class="success-rate">87%</div>
+                        </div>
+                        <div class="crop-content">
+                            <div class="crop-parameter">
+                                <span class="param-label">Climat:</span>
+                                <span class="param-value">Chaud</span>
+                            </div>
+                            <div class="crop-parameter">
+                                <span class="param-label">Sol idéal:</span>
+                                <span class="param-value">Profond, fertile</span>
+                            </div>
+                            <div class="crop-parameter">
+                                <span class="param-label">Saison:</span>
+                                <span class="param-value">Printemps-Été</span>
+                            </div>
+                            <div class="crop-parameter">
+                                <span class="param-label">pH optimal:</span>
+                                <span class="param-value">5.8 - 7.0</span>
+                            </div>
+                            
+                            <div class="recommendations">
+                                <h4><i class="fas fa-tasks"></i> Recommandations:</h4>
+                                <ul>
+                                    <li>Appliquer un engrais azoté pour stimuler la croissance</li>
+                                    <li>Assurer un bon drainage pour éviter la stagnation d'eau</li>
+                                    <li>Pailler pour conserver l'humidité et contrôler les mauvaises herbes</li>
+                                    <li>Éviter les sols trop compacts</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Crop 3 -->
+                    <div class="crop-card">
+                        <div class="crop-header">
+                            <div class="crop-name">Pomme de terre</div>
+                            <div class="success-rate">78%</div>
+                        </div>
+                        <div class="crop-content">
+                            <div class="crop-parameter">
+                                <span class="param-label">Climat:</span>
+                                <span class="param-value">Fraîs à tempéré</span>
+                            </div>
+                            <div class="crop-parameter">
+                                <span class="param-label">Sol idéal:</span>
+                                <span class="param-value">Sableux, bien drainé</span>
+                            </div>
+                            <div class="crop-parameter">
+                                <span class="param-label">Saison:</span>
+                                <span class="param-value">Printemps-Automne</span>
+                            </div>
+                            <div class="crop-parameter">
+                                <span class="param-label">pH optimal:</span>
+                                <span class="param-value">5.0 - 6.0</span>
+                            </div>
+                            
+                            <div class="recommendations">
+                                <h4><i class="fas fa-tasks"></i> Recommandations:</h4>
+                                <ul>
+                                    <li>Ajouter du soufre pour abaisser légèrement le pH</li>
+                                    <li>Appliquer un engrais riche en potassium pour améliorer la qualité des tubercules</li>
+                                    <li>Éviter les sols trop compacts</li>
+                                    <li>Maintenir une humidité constante durant la formation des tubercules</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Nouvelle section pour les données pédologiques avancées -->
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <div class="data-card-title">
+                            <i class="fas fa-seedling"></i> Analyse Pédologique Avancée
+                        </div>
+                        <button class="data-refresh">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <div class="soil-properties">
+                        <div class="soil-property">
+                            <span class="soil-label">Texture du sol</span>
+                            <span class="soil-value" id="soil-texture">Argilo-limoneuse</span>
+                        </div>
+                        <div class="soil-property">
+                            <span class="soil-label">Matière organique</span>
+                            <span class="soil-value" id="organic-matter">2.8%</span>
+                        </div>
+                        <div class="soil-property">
+                            <span class="soil-label">CEC (Capacité d'échange cationique)</span>
+                            <span class="soil-value" id="cec">18.5 cmol+/kg</span>
+                        </div>
+                        <div class="soil-property">
+                            <span class="soil-label">Salinité</span>
+                            <span class="soil-value" id="salinity">0.8 dS/m</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Nouvelle section pour les données historiques -->
+                <div class="historical-data">
+                    <h4><i class="fas fa-history"></i> Historique des Cultures</h4>
+                    <div class="historical-items" id="crop-history">
+                        <!-- Les données historiques seront injectées ici -->
+                    </div>
+                </div>
+            </section>
+            
+            <!-- History Page -->
+            <section id="history" class="page">
+                <h2 class="page-title"><i class="fas fa-history"></i> Historique des données</h2>
+                
+                <div class="history-container">
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label class="filter-label">Période</label>
+                            <select class="filter-select">
+                                <option>7 derniers jours</option>
+                                <option selected>30 derniers jours</option>
+                                <option>3 derniers mois</option>
+                                <option>6 derniers mois</option>
+                                <option>1 année</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">Paramètre</label>
+                            <select class="filter-select">
+                                <option>Tous les paramètres</option>
+                                <option>Azote (N)</option>
+                                <option>Phosphore (P)</option>
+                                <option>Potassium (K)</option>
+                                <option>Température</option>
+                                <option>Humidité</option>
+                                <option>pH</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">Zone</label>
+                            <select class="filter-select">
+                                <option>Toutes les zones</option>
+                                <option>Zone Nord</option>
+                                <option>Zone Sud</option>
+                                <option>Zone Est</option>
+                                <option>Zone Ouest</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Azote (N)</th>
+                                    <th>Phosphore (P)</th>
+                                    <th>Potassium (K)</th>
+                                    <th>Température</th>
+                                    <th>Humidité</th>
+                                    <th>pH</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-body">
+                                <!-- Les données historiques seront injectées ici -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Settings Page - Mise à jour professionnelle -->
+            <section id="settings" class="page">
+                <h2 class="page-title"><i class="fas fa-cog"></i> Configuration du système</h2>
+                
+                <div class="settings-container">
+                    <div class="settings-tabs">
+                        <div class="tab-header">
+                            <!-- Réorganisation logique des onglets -->
+                            <div class="tab active" data-tab="general">Général</div>
+                            <div class="tab" data-tab="location">Localisation</div>
+                            <div class="tab" data-tab="soil">Sol</div>
+                            <div class="tab" data-tab="water">Eau</div>
+                            <div class="tab" data-tab="climate">Climat</div>
+                            <div class="tab" data-tab="crops">Cultures</div>
+                            <div class="tab" data-tab="ai">Analyse & IA</div>
+                            <div class="tab" data-tab="external">Intégrations</div>
+                            <div class="tab" data-tab="sensor">Matériel</div>
+                            <div class="tab" data-tab="features">Fonctionnalités</div>
+                            <div class="tab" data-tab="preferences">Notifications</div>
+                        </div>
+                        
+                        <div class="tab-content">
+                            <!-- Nouvel onglet Général -->
+                            <div class="tab-pane active" id="general-tab">
+                                <h3 class="settings-title">Configuration générale</h3>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Langue de l'interface</label>
+                                    <select id="language" class="form-input">
+                                        <option value="fr" selected>Français</option>
+                                        <option value="en">English</option>
+                                        <option value="es">Español</option>
+                                        <option value="de">Deutsch</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Unités de mesure</label>
+                                    <select id="units" class="form-input">
+                                        <option value="metric" selected>Système métrique</option>
+                                        <option value="imperial">Système impérial</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Format des dates</label>
+                                    <select id="date-format" class="form-input">
+                                        <option value="dd/mm/yyyy" selected>JJ/MM/AAAA</option>
+                                        <option value="mm/dd/yyyy">MM/JJ/AAAA</option>
+                                        <option value="yyyy-mm-dd">AAAA-MM-JJ</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Thème d'interface</label>
+                                    <select id="theme" class="form-input">
+                                        <option value="light" selected>Clair</option>
+                                        <option value="dark">Sombre</option>
+                                        <option value="system">Système</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Mode d'affichage</label>
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                                        <label class="switch">
+                                            <input type="checkbox" id="compact-view">
+                                            <span class="slider"></span>
+                                        </label>
+                                        <span>Vue compacte</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Onglet Localisation (inchangé) -->
+                            <div class="tab-pane" id="location-tab">
+                                <h3 class="settings-title">Localisation de la parcelle</h3>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Continent</label>
+                                        <select id="continent" class="form-input">
+                                            <option value="">Sélectionnez un continent</option>
+                                            <option value="afrique">Afrique</option>
+                                            <option value="europe">Europe</option>
+                                            <option value="asie">Asie</option>
+                                            <option value="amerique">Amérique</option>
+                                            <option value="oceanie">Océanie</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">Pays</label>
+                                        <input type="text" id="country" class="form-input" placeholder="Pays">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Région</label>
+                                        <input type="text" id="region" class="form-input" placeholder="Région">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">Ville</label>
+                                        <input type="text" id="city" class="form-input" placeholder="Ville">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Altitude (m)</label>
+                                        <input type="number" id="altitude" class="form-input" placeholder="Altitude en mètres">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">Topographie</label>
+                                        <select id="topography" class="form-input">
+                                            <option value="">Sélectionnez...</option>
+                                            <option value="plaine">Plaine</option>
+                                            <option value="colline">Colline</option>
+                                            <option value="montagne">Montagne</option>
+                                            <option value="vallee">Vallée</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <button class="btn btn-outline" id="get-location">
+                                        <i class="fas fa-location-dot"></i> Obtenir la localisation GPS
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Onglet Sol (inchangé) -->
+                            <div class="tab-pane" id="soil-tab">
+                                <h3 class="settings-title">Propriétés du sol</h3>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Type de sol</label>
+                                        <select id="soil-type" class="form-input">
+                                            <option value="">Sélectionnez...</option>
+                                            <option value="sableux">Sableux</option>
+                                            <option value="argileux">Argileux</option>
+                                            <option value="limoneux">Limoneux</option>
+                                            <option value="tourbeux">Tourbeux</option>
+                                            <option value="calcaire">Calcaire</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">Texture du sol</label>
+                                        <select id="soil-texture" class="form-input">
+                                            <option value="">Sélectionnez...</option>
+                                            <option value="leger">Léger</option>
+                                            <option value="moyen">Moyen</option>
+                                            <option value="lourd">Lourd</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Profondeur du sol (cm)</label>
+                                        <input type="number" id="soil-depth" class="form-input" placeholder="Profondeur en cm">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">Matière organique (%)</label>
+                                        <input type="number" id="organic-matter" class="form-input" placeholder="Pourcentage">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Capacité de rétention d'eau</label>
+                                        <select id="water-retention" class="form-input">
+                                            <option value="">Sélectionnez...</option>
+                                            <option value="faible">Faible</option>
+                                            <option value="moyenne">Moyenne</option>
+                                            <option value="bonne">Bonne</option>
+                                            <option value="excellente">Excellente</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">Salinité</label>
+                                        <select id="salinity" class="form-input">
+                                            <option value="">Sélectionnez...</option>
+                                            <option value="faible">Faible</option>
+                                            <option value="moderee">Modérée</option>
+                                            <option value="elevee">Élevée</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Onglet Eau (inchangé) -->
+                            <div class="tab-pane" id="water-tab">
+                                <h3 class="settings-title">Paramètres Hydriques Avancés</h3>
+                                
+                                <div class="water-params">
+                                    <div class="water-param">
+                                        <div class="param-name">Niveau de la nappe phréatique</div>
+                                        <div class="param-value" id="water-level-value">2.8 m</div>
+                                        <input type="range" id="water-level" min="0" max="10" step="0.1" value="2.8" class="slider" style="width: 100%; margin-top: 10px;">
+                                    </div>
+                                    
+                                    <div class="water-param">
+                                        <div class="param-name">Qualité de l'eau d'irrigation</div>
+                                        <div class="form-row" style="margin-top: 10px;">
+                                            <div class="form-group">
+                                                <label class="form-label">pH</label>
+                                                <input type="number" id="water-ph" class="form-input" step="0.1" value="7.2">
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label">Salinité (dS/m)</label>
+                                                <input type="number" id="water-salinity" class="form-input" step="0.1" value="0.5">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="water-param">
+                                        <div class="param-name">Capacité de rétention en eau</div>
+                                        <div class="param-value">Bonne</div>
+                                        <div class="priority-labels" style="margin-top: 10px;">
+                                            <span>Faible</span>
+                                            <span>Moyenne</span>
+                                            <span>Bonne</span>
+                                            <span>Excellente</span>
+                                        </div>
+                                        <input type="range" id="water-retention" min="1" max="4" value="3" class="slider" style="width: 100%;">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group" style="margin-top: 20px;">
+                                    <label class="form-label">Système d'irrigation</label>
+                                    <div class="irrigation-system">
+                                        <div class="system-option active">
+                                            <div class="system-icon">
+                                                <i class="fas fa-tint"></i>
+                                            </div>
+                                            <div>Goutte-à-goutte</div>
+                                        </div>
+                                        <div class="system-option">
+                                            <div class="system-icon">
+                                                <i class="fas fa-shower"></i>
+                                            </div>
+                                            <div>Aspersion</div>
+                                        </div>
+                                        <div class="system-option">
+                                            <div class="system-icon">
+                                                <i class="fas fa-water"></i>
+                                            </div>
+                                            <div>Gravitaire</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group" style="margin-top: 20px;">
+                                    <label class="form-label">Programme d'irrigation existant</label>
+                                    <textarea id="irrigation-schedule" class="form-input" rows="4" placeholder="Décrivez votre programme d'irrigation actuel..."></textarea>
+                                </div>
+                            </div>
+                            
+                            <!-- Onglet Climat (inchangé) -->
+                            <div class="tab-pane" id="climate-tab">
+                                <h3 class="settings-title">Conditions climatiques</h3>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Zone climatique</label>
+                                        <select id="climate-zone" class="form-input">
+                                            <option value="">Sélectionnez...</option>
+                                            <option value="tropical">Tropical</option>
+                                            <option value="aride">Aride</option>
+                                            <option value="tempere">Tempéré</option>
+                                            <option value="continental">Continental</option>
+                                            <option value="polaire">Polaire</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">Précipitations annuelles (mm)</label>
+                                        <input type="number" id="rainfall" class="form-input" placeholder="Millimètres">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Température moyenne (°C)</label>
+                                        <input type="number" id="avg-temperature" class="form-input" placeholder="Degrés Celsius">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">Ensoleillement quotidien (h)</label>
+                                        <input type="number" id="sunlight" class="form-input" placeholder="Heures par jour">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Saison de croissance</label>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Début</label>
+                                            <input type="month" id="growing-start" class="form-input">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Fin</label>
+                                            <input type="month" id="growing-end" class="form-input">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Risques climatiques</label>
+                                    <div class="form-checkboxes">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="risk-frost"> Gel
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="risk-drought"> Sécheresse
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="risk-flood"> Inondation
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="risk-heat"> Vague de chaleur
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Nouvel onglet Cultures -->
+                            <div class="tab-pane" id="crops-tab">
+                                <h3 class="settings-title">Configuration des cultures</h3>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Type de culture principale</label>
+                                    <select id="main-crop" class="form-input">
+                                        <option value="">Sélectionnez...</option>
+                                        <option value="cereales">Céréales</option>
+                                        <option value="legumes">Légumes</option>
+                                        <option value="fruits">Fruits</option>
+                                        <option value="oleagineux">Oléagineux</option>
+                                        <option value="fourrage">Fourrage</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Variétés cultivées</label>
+                                    <textarea id="crop-varieties" class="form-input" rows="3" placeholder="Listez les variétés que vous cultivez..."></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Calendrier cultural</label>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Date de semis</label>
+                                            <input type="date" id="sowing-date" class="form-input">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Date de récolte prévue</label>
+                                            <input type="date" id="harvest-date" class="form-input">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Objectifs de rendement</label>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Rendement cible (kg/ha)</label>
+                                            <input type="number" id="target-yield" class="form-input" placeholder="Kilogrammes par hectare">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Qualité cible</label>
+                                            <select id="quality-target" class="form-input">
+                                                <option value="standard">Standard</option>
+                                                <option value="premium">Premium</option>
+                                                <option value="bio">Biologique</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Préférences culturales</label>
+                                    <div class="ai-preferences">
+                                        <div class="ai-card">
+                                            <div class="ai-card-title">Types de cultures</div>
+                                            <div class="preference-item">
+                                                <input type="checkbox" id="pref-vegetables" class="preference-check" checked>
+                                                <label for="pref-vegetables">Légumes</label>
+                                            </div>
+                                            <div class="preference-item">
+                                                <input type="checkbox" id="pref-cereals" class="preference-check" checked>
+                                                <label for="pref-cereals">Céréales</label>
+                                            </div>
+                                            <div class="preference-item">
+                                                <input type="checkbox" id="pref-fruits" class="preference-check">
+                                                <label for="pref-fruits">Fruits</label>
+                                            </div>
+                                            <div class="preference-item">
+                                                <input type="checkbox" id="pref-oilseeds" class="preference-check">
+                                                <label for="pref-oilseeds">Oléagineux</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Onglet Analyse & IA (simplifié) -->
+                            <div class="tab-pane" id="ai-tab">
+                                <h3 class="settings-title">Paramètres d'analyse et IA</h3>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Niveau d'automatisation</label>
+                                    <select id="automation-level" class="form-input">
+                                        <option value="manual">Manuel</option>
+                                        <option value="semi-auto" selected>Semi-automatique</option>
+                                        <option value="full-auto">Complètement automatisé</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="ai-preferences">
+                                    <div class="ai-card">
+                                        <div class="ai-card-title">Niveau de risque acceptable</div>
+                                        <div class="risk-levels">
+                                            <div class="risk-level">Conservateur</div>
+                                            <div class="risk-level active">Équilibre</div>
+                                            <div class="risk-level">Audacieux</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="ai-card">
+                                        <div class="ai-card-title">Objectifs d'optimisation</div>
+                                        <select id="ai-optimization" class="form-input" style="margin-top: 10px;">
+                                            <option value="yield">Optimisation rendement</option>
+                                            <option value="quality" selected>Optimisation qualité</option>
+                                            <option value="resilience">Optimisation résilience</option>
+                                            <option value="balanced">Approche équilibrée</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="ai-card">
+                                        <div class="ai-card-title">Objectifs de durabilité</div>
+                                        <div class="preference-item">
+                                            <input type="checkbox" id="goal-carbon" class="preference-check" checked>
+                                            <label for="goal-carbon">Carbone</label>
+                                        </div>
+                                        <div class="preference-item">
+                                            <input type="checkbox" id="goal-water" class="preference-check" checked>
+                                            <label for="goal-water">Eau</label>
+                                        </div>
+                                        <div class="preference-item">
+                                            <input type="checkbox" id="goal-biodiversity" class="preference-check">
+                                            <label for="goal-biodiversity">Biodiversité</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="ai-card">
+                                        <div class="ai-card-title">Sources de données préférées</div>
+                                        <div class="preference-item">
+                                            <input type="checkbox" id="source-satellite" class="preference-check" checked>
+                                            <label for="source-satellite">Satellite</label>
+                                        </div>
+                                        <div class="preference-item">
+                                            <input type="checkbox" id="source-sensors" class="preference-check" checked>
+                                            <label for="source-sensors">Capteurs</label>
+                                        </div>
+                                        <div class="preference-item">
+                                            <input type="checkbox" id="source-observations" class="preference-check">
+                                            <label for="source-observations">Observations</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group" style="margin-top: 20px;">
+                                    <label class="form-label">Fréquence des analyses IA</label>
+                                    <select id="ai-frequency" class="form-input">
+                                        <option value="daily">Quotidienne</option>
+                                        <option value="weekly" selected>Hebdomadaire</option>
+                                        <option value="biweekly">Bi-hebdomadaire</option>
+                                        <option value="monthly">Mensuelle</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Onglet Intégrations (inchangé) -->
+                            <div class="tab-pane" id="external-tab">
+                                <h3 class="settings-title">Intégration de Données Externes</h3>
+                                
+                                <div class="api-integration">
+                                    <div class="api-title">
+                                        <i class="fas fa-cloud-sun"></i> Service Météorologique
+                                        <span class="api-status" id="weather-status"></span>
+                                    </div>
+                                    <p>Connectez AgroSmart à un service météo pour obtenir des prévisions précises et des alertes en temps réel.</p>
+                                    <input type="text" class="api-key-input" id="weather-api-key" placeholder="Clé API Météo">
+                                    <div class="api-actions">
+                                        <button class="btn btn-primary" id="connect-weather">
+                                            <i class="fas fa-plug"></i> Connecter
+                                        </button>
+                                        <button class="btn btn-outline" id="test-weather">
+                                            <i class="fas fa-cloud-sun"></i> Tester la connexion
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="api-integration" style="margin-top: 20px;">
+                                    <div class="api-title">
+                                        <i class="fas fa-chart-line"></i> Données de Marché
+                                        <span class="api-status" id="market-status"></span>
+                                    </div>
+                                    <p>Obtenez les prix du marché en temps réel pour optimiser vos décisions de vente.</p>
+                                    <input type="text" class="api-key-input" id="market-api-key" placeholder="Clé API Marché">
+                                    <div class="api-actions">
+                                        <button class="btn btn-primary" id="connect-market">
+                                            <i class="fas fa-plug"></i> Connecter
+                                        </button>
+                                        <button class="btn btn-outline" id="test-market">
+                                            <i class="fas fa-coins"></i> Tester la connexion
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="api-integration" style="margin-top: 20px; background: rgba(76, 175, 80, 0.05); border-color: rgba(76, 175, 80, 0.3);">
+                                    <div class="api-title">
+                                        <i class="fas fa-satellite"></i> Données Satellitaires
+                                        <span class="api-status" id="satellite-status"></span>
+                                    </div>
+                                    <p>Accédez aux données NDVI et à la température de surface pour une analyse avancée de vos cultures.</p>
+                                    <input type="text" class="api-key-input" id="satellite-api-key" placeholder="Clé API Satellite">
+                                    <div class="api-actions">
+                                        <button class="btn btn-primary" id="connect-satellite">
+                                            <i class="fas fa-plug"></i> Connecter
+                                        </button>
+                                        <button class="btn btn-outline" id="test-satellite">
+                                            <i class="fas fa-satellite"></i> Tester la connexion
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-top: 25px; padding: 15px; background: #f8f9fa; border-radius: var(--radius);">
+                                    <h4><i class="fas fa-info-circle"></i> Comment obtenir des clés API</h4>
+                                    <p style="margin-top: 10px; font-size: 0.9rem;">
+                                        Les clés API peuvent être obtenues auprès des fournisseurs de services suivants :
+                                    </p>
+                                    <ul style="margin-top: 10px; padding-left: 20px; font-size: 0.9rem;">
+                                        <li><strong>Météo :</strong> OpenWeatherMap, WeatherAPI</li>
+                                        <li><strong>Marché :</strong> AgriPrice, MarketWatch</li>
+                                        <li><strong>Satellite :</strong> Sentinel Hub, NASA Earthdata</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <!-- Onglet Matériel (inchangé) -->
+                            <div class="tab-pane" id="sensor-tab">
+                                <h3 class="settings-title">Configuration du capteur</h3>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Nom du capteur</label>
+                                    <input type="text" id="sensor-name" class="form-input" value="Capteur Principal">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Emplacement</label>
+                                    <input type="text" id="sensor-location" class="form-input" value="Zone Nord - Parcelle 3">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Fréquence de mesure</label>
+                                    <select id="measurement-frequency" class="form-input">
+                                        <option>Toutes les heures</option>
+                                        <option selected>Toutes les 2 heures</option>
+                                        <option>Toutes les 4 heures</option>
+                                        <option>Toutes les 6 heures</option>
+                                        <option>Une fois par jour</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Onglet Fonctionnalités (inchangé) -->
+                            <div class="tab-pane" id="features-tab">
+                                <h3 class="settings-title">Fonctionnalités Professionnelles</h3>
+                                
+                                <div class="professional-features">
+                                    <!-- Simulateur de scénarios -->
+                                    <div class="feature-card">
+                                        <div class="feature-header">
+                                            <i class="fas fa-chart-line"></i>
+                                            <h4>Simulateur de scénarios</h4>
+                                        </div>
+                                        <div class="feature-content">
+                                            <p>Évaluez l'impact des changements climatiques, des cours des matières premières et des décisions d'investissement.</p>
+                                            <button class="btn btn-outline feature-btn">Lancer une simulation</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Planificateur de rotation -->
+                                    <div class="feature-card">
+                                        <div class="feature-header">
+                                            <i class="fas fa-sync-alt"></i>
+                                            <h4>Planificateur de rotation intelligent</h4>
+                                        </div>
+                                        <div class="feature-content">
+                                            <p>Planifiez vos rotations culturales sur 5-7 ans en optimisant les nutriments et réduisant les pathogènes.</p>
+                                            <button class="btn btn-outline feature-btn">Planifier une rotation</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Assistant phytosanitaire -->
+                                    <div class="feature-card">
+                                        <div class="feature-header">
+                                            <i class="fas fa-bug"></i>
+                                            <h4>Assistant phytosanitaire</h4>
+                                        </div>
+                                        <div class="feature-content">
+                                            <p>Identifiez les maladies des plantes et obtenez des recommandations de traitement personnalisées.</p>
+                                            <button class="btn btn-outline feature-btn">Démarrer l'assistant</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Optimiseur de ressources -->
+                                    <div class="feature-card">
+                                        <div class="feature-header">
+                                            <i class="fas fa-tint"></i>
+                                            <h4>Optimiseur de ressources</h4>
+                                        </div>
+                                        <div class="feature-content">
+                                            <p>Optimisez l'utilisation de l'eau, des engrais et du calendrier cultural pour maximiser votre rendement.</p>
+                                            <button class="btn btn-outline feature-btn">Optimiser les ressources</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Tableau de bord économique -->
+                                    <div class="feature-card">
+                                        <div class="feature-header">
+                                            <i class="fas fa-calculator"></i>
+                                            <h4>Tableau de bord économique</h4>
+                                        </div>
+                                        <div class="feature-content">
+                                            <p>Suivez vos coûts de production, prévoyez vos revenus et analysez votre marge brute.</p>
+                                            <button class="btn btn-outline feature-btn">Ouvrir le tableau de bord</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Onglet Notifications (anciennement Préférences) -->
+                            <div class="tab-pane" id="preferences-tab">
+                                <h3 class="settings-title">Préférences de notification</h3>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Recevoir des notifications par email</label>
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                                        <label class="switch">
+                                            <input type="checkbox" id="email-notifications" checked>
+                                            <span class="slider"></span>
+                                        </label>
+                                        <span>Activé</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Seuil d'alerte - Azote (N)</label>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Minimum</label>
+                                            <input type="number" id="nitrogen-min" class="form-input" value="80" min="0">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Maximum</label>
+                                            <input type="number" id="nitrogen-max" class="form-input" value="200" min="0">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Seuil d'alerte - Phosphore (P)</label>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Minimum</label>
+                                            <input type="number" id="phosphorus-min" class="form-input" value="30" min="0">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Maximum</label>
+                                            <input type="number" id="phosphorus-max" class="form-input" value="70" min="0">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Seuil d'alerte - pH</label>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Minimum</label>
+                                            <input type="number" id="ph-min" class="form-input" value="5.5" min="0" step="0.1">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Maximum</label>
+                                            <input type="number" id="ph-max" class="form-input" value="7.0" min="0" step="0.1">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button id="test-notifications" class="btn btn-outline">
+                                    <i class="fas fa-bell"></i> Tester les notifications
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-footer">
+                            <button id="save-settings" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Enregistrer la configuration
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
 
-    <script src="script.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
