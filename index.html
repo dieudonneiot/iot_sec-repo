@@ -991,7 +991,46 @@
                                         </div>
                                         <div class="feature-content">
                                             <p>Évaluez l'impact des changements climatiques, des cours des matières premières et des décisions d'investissement.</p>
-                                            <button class="btn btn-outline feature-btn">Lancer une simulation</button>
+                                            
+                                            <div class="form-group">
+                                                <label class="form-label" for="simulator-crop-select">Culture à simuler</label>
+                                                <select id="simulator-crop-select" class="form-input">
+                                                    <option value="">Sélectionnez une culture</option>
+                                                    <option value="tomato">Tomate</option>
+                                                    <option value="corn">Maïs</option>
+                                                    <option value="potato">Pomme de terre</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="form-row">
+                                                <div class="form-group">
+                                                    <label class="form-label" for="simulator-nitrogen-input">Changement Azote (mg/kg)</label>
+                                                    <input type="number" id="simulator-nitrogen-input" class="form-input" placeholder="Ex: +20 ou -10">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class="form-label" for="simulator-ph-input">Changement pH</label>
+                                                    <input type="number" id="simulator-ph-input" class="form-input" step="0.1" placeholder="Ex: +0.5 ou -0.3">
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="form-row">
+                                                <div class="form-group">
+                                                    <label class="form-label" for="simulator-temperature-input">Changement Température (°C)</label>
+                                                    <input type="number" id="simulator-temperature-input" class="form-input" placeholder="Ex: +5 ou -2">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class="form-label" for="simulator-humidity-input">Changement Humidité (%)</label>
+                                                    <input type="number" id="simulator-humidity-input" class="form-input" placeholder="Ex: +10 ou -5">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class="form-label" for="simulator-rainfall-input">Pluie simulée (%)</label>
+                                                    <input type="number" id="simulator-rainfall-input" class="form-input" placeholder="Ex: +20 ou 0">
+                                                </div>
+                                            </div>
+                                            <button class="btn btn-outline feature-btn" id="run-scenario-simulator">Lancer une simulation</button>
+                                            <div id="simulation-results" style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: var(--radius);">
+                                                Simulation results will appear here.
+                                            </div>
                                         </div>
                                     </div>
                                     
@@ -1003,8 +1042,36 @@
                                         </div>
                                         <div class="feature-content">
                                             <p>Planifiez vos rotations culturales sur 5-7 ans en optimisant les nutriments et réduisant les pathogènes.</p>
+
+                                            <div class="form-group">
+                                                <label class="form-label" for="rotation-years-input">Nombre d'années</label>
+                                                <input type="number" id="rotation-years-input" class="form-input" min="1" value="5" placeholder="Ex: 5">
+                                            </div>                                            
+                                            <div class="form-group">
+                                                <label class="form-label" for="rotation-crops-select">Cultures à inclure</label>
+                                                <select id="rotation-crops-select" class="form-input" multiple="true">
+                                                    <option value="Maïs">Maïs</option>
+                                                    <option value="Blé">Blé</option>
+                                                    <option value="Soja">Soja</option>
+                                                    <option value="Tomate">Tomate</option>                                                 </select>                                            </div>                                            
+                                            <div class="form-group">
+                                                <label class="form-label" for="rotation-crops-input">Cultures à inclure (séparées par des virgules)</label>
+                                                <input type="text" id="rotation-crops-input" class="form-input" placeholder="Ex: Maïs, Blé, Soja">
+                                            </div>
+                                            
                                             <button class="btn btn-outline feature-btn">Planifier une rotation</button>
-                                        </div>
+                                            <div id="rotation-plan-output" style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: var(--radius);">Rotation plan will appear here.</div>
+                                                <h3>Plan de rotation généré :</h3>
+                                                <table class="rotation-table" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Année</th>
+                                                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Culture</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="rotation-plan-tbody">
+                                                        <!-- Rotation plan rows will be added here dynamically -->                                                     </tbody>                                                 </table>                                             </div>                                         </div>
+                                        
                                     </div>
                                     
                                     <!-- Assistant phytosanitaire -->
@@ -1015,6 +1082,20 @@
                                         </div>
                                         <div class="feature-content">
                                             <p>Identifiez les maladies des plantes et obtenez des recommandations de traitement personnalisées.</p>
+
+                                            <div class="form-group">
+                                                <label class="form-label" for="phytosanitary-crop-select">Culture concernée</label>
+                                                <select id="phytosanitary-crop-select" class="form-input">
+                                                    <option value="">Sélectionnez une culture</option>
+                                                    <option value="tomato">Tomate</option>
+                                                    <option value="corn">Maïs</option>
+                                                    <option value="potato">Pomme de terre</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label" for="phytosanitary-problem-description">Description du problème observé</label>
+                                                <textarea id="phytosanitary-problem-description" class="form-input" rows="4" placeholder="Ex: Feuilles jaunissent, taches brunes sur les tiges..."></textarea>
+                                            </div>
                                             <button class="btn btn-outline feature-btn">Démarrer l'assistant</button>
                                         </div>
                                     </div>
@@ -1027,7 +1108,29 @@
                                         </div>
                                         <div class="feature-content">
                                             <p>Optimisez l'utilisation de l'eau, des engrais et du calendrier cultural pour maximiser votre rendement.</p>
+
+                                            <div class="form-group">
+                                                <label class="form-label" for="optimizer-goal-select">Objectif d'optimisation</label>
+                                                <select id="optimizer-goal-select" class="form-input">
+                                                    <option value="">Sélectionnez un objectif</option>
+                                                    <option value="maximize-yield">Maximiser le rendement</option>
+                                                    <option value="minimize-water">Minimiser l'utilisation d'eau</option>
+                                                    <option value="minimize-fertilizer-cost">Minimiser le coût des engrais</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label" for="optimizer-crop-select">Culture ou Zone concernée</label>
+                                                <select id="optimizer-crop-select" class="form-input">
+                                                    <option value="">Sélectionnez une culture ou une zone</option>
+                                                    <option value="tomato">Tomate</option>
+                                                    <option value="corn">Maïs</option>
+                                                    <option value="zone-nord">Zone Nord</option>
+                                                </select>
+                                            </div>
                                             <button class="btn btn-outline feature-btn">Optimiser les ressources</button>
+                                            <div id="optimizer-results" style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: var(--radius);">Optimization suggestion will appear here.</div>
+
                                         </div>
                                     </div>
                                     
@@ -1039,8 +1142,26 @@
                                         </div>
                                         <div class="feature-content">
                                             <p>Suivez vos coûts de production, prévoyez vos revenus et analysez votre marge brute.</p>
-                                            <button class="btn btn-outline feature-btn">Ouvrir le tableau de bord</button>
+                                            <button class="btn btn-outline feature-btn" id="open-economic-dashboard">Ouvrir le tableau de bord</button>
+                                            <div id="economic-dashboard-content" style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: var(--radius);">
+                                                <h3>Prix du marché :</h3>
+                                                <div class="market-prices" id="market-prices">
+                                                    <!-- Les prix seront injectés dynamiquement ici -->
+                                                </div>
+
+                                                <h3 style="margin-top: 15px;">Coûts estimés :</h3>
+                                                <p id="estimated-costs-output">Costs will appear here.</p>
+
+                                                <h3 style="margin-top: 15px;">Revenus estimés :</h3>
+                                                <p id="estimated-revenue-output">Revenue will appear here.</p>
+
+                                                <h3 style="margin-top: 15px;">Rentabilité estimée :</h3>
+                                                <p id="estimated-profitability-output">Profitability will appear here.</p>
+                                            </div>
                                         </div>
+                                    </div>
+                                    
+                                    
                                     </div>
                                 </div>
                             </div>

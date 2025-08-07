@@ -854,9 +854,306 @@ function setupAISettings() {
 // Phase 3 - Fonctionnalités professionnelles
 function setupProfessionalFeatures() {
     // Add event listeners to professional feature buttons
+    document.getElementById('simulate-scenarios').addEventListener('click', runScenarioSimulator);
+    document.getElementById('plan-rotation').addEventListener('click', createRotationPlan);
+    document.getElementById('phytosanitary-assistant').addEventListener('click', startPhytosanitaryAssistant);
+    document.getElementById('optimize-resources').addEventListener('click', optimizeResources);
+    document.getElementById('economic-dashboard').addEventListener('click', openEconomicDashboard);
 }
 
 // Initialize the application
+
+// Placeholder functions for professional features
+function createRotationPlan() {
+    const yearsInput = document.getElementById('rotation-years-input');
+    const cropsSelect = document.getElementById('rotation-crops-select');
+    const outputDiv = document.getElementById('rotation-plan-output');
+
+    const numberOfYears = parseInt(yearsInput.value);
+    const selectedOptions = Array.from(cropsSelect.selectedOptions);
+    const crops = selectedOptions.map(option => option.value);
+
+    if (isNaN(numberOfYears) || numberOfYears <= 0) {
+        alert('Veuillez entrer un nombre d\'années valide.');
+        displayRotationPlan([]); // Clear the table
+        return;
+    }
+
+    if (crops.length === 0) {
+        alert('Veuillez sélectionner au moins une culture.');
+        displayRotationPlan([]); // Clear the table
+        return;
+    }
+
+    const rotationPlanData = [];
+    for (let i = 0; i < numberOfYears; i++) {
+ rotationPlanData.push({ year: i + 1, crop: crops[i % crops.length] });
+    }
+
+ displayRotationPlan(rotationPlanData);
+}
+function startPhytosanitaryAssistant() {
+    if (!currentUser) {
+        alert("Veuillez vous connecter pour utiliser l'assistant phytosanitaire.");
+        return;
+    }
+
+    // Get input values
+    const selectedCrop = document.getElementById('phytosanitary-crop-select').value;
+    const problemDescription = document.getElementById('phytosanitary-problem-description').value.trim();
+
+    const resultsDiv = document.getElementById('phytosanitary-results');
+    resultsDiv.innerHTML = '<h3>Résultats de l\'assistant phytosanitaire</h3>'; // Clear previous results and add a heading
+
+    // Basic validation
+    if (!selectedCrop || selectedCrop === "") {
+        resultsDiv.innerHTML += "<p style='color: red;'>Veuillez sélectionner une culture.</p>";
+        return;
+    }
+
+    if (!problemDescription) {
+        resultsDiv.innerHTML += "<p style='color: red;'>Veuillez décrire le problème observé.</p>";
+        return;
+    }
+
+    // --- Placeholder Diagnosis and Recommendation Logic ---
+    // In a real application, this would involve:
+    // - Analyzing the problem description (text analysis).
+    // - Considering the selected crop.
+    // - Potentially integrating with sensor data (e.g., nutrient levels, humidity).
+    // - Accessing a knowledge base of pests/diseases and symptoms.
+    // - Using AI models for more accurate diagnosis.
+
+    let diagnosis = "Analyse en cours...";
+    let recommendation = "Veuillez patienter.";
+
+    // Very basic keyword matching for placeholder diagnosis
+    if (problemDescription.toLowerCase().includes('feuilles jaunes')) {
+        diagnosis = "Possible carence en azote ou problème d'humidité.";
+        recommendation = "Vérifiez les niveaux d'azote du sol et l'arrosage.";
+    } else if (problemDescription.toLowerCase().includes('taches sur les feuilles')) {
+        diagnosis = "Possible infection fongique.";
+        recommendation = "Envisagez l'application d'un fongicide adapté à la culture.";
+    } else if (problemDescription.toLowerCase().includes('insectes')) {
+        diagnosis = "Présence de ravageurs.";
+        recommendation = "Identifiez l'insecte pour un traitement spécifique.";
+    } else {
+        diagnosis = "Problème indéterminé pour le moment.";
+        recommendation = "Collectez plus d'informations ou consultez un expert local.";
+    }
+
+    // --- Update Output Display ---
+    resultsDiv.innerHTML += `
+        <p><strong>Culture sélectionnée:</strong> ${selectedCrop}</p>
+        <p><strong>Problème décrit:</strong> ${problemDescription}</p>
+        <h4>Diagnostic potentiel:</h4>
+        <p>${diagnosis}</p>
+        <h4>Recommandation:</h4>
+        <p>${recommendation}</p>
+    `;
+
+    // In a real implementation, you would replace this placeholder logic
+}
+function optimizeResources() {
+    if (!currentUser) {
+        alert("Veuillez vous connecter pour utiliser l'optimiseur de ressources.");
+    }
+ alert('Optimiseur de ressources fonction sera bientôt disponible!');
+ return;
+}
+
+function openEconomicDashboard() {
+    if (!currentUser) {
+        alert("Veuillez vous connecter pour accéder au tableau de bord économique.");
+        return;
+    }
+
+    // Get references to output elements
+    const costsOutputDiv = document.getElementById('estimated-costs-output');
+    const revenueOutputDiv = document.getElementById('estimated-revenue-output');
+    const profitabilityOutputDiv = document.getElementById('estimated-profitability-output');
+
+    // Clear previous content
+    costsOutputDiv.innerHTML = '';
+    revenueOutputDiv.innerHTML = '';
+    profitabilityOutputDiv.innerHTML = '';
+
+    // --- Basic Placeholder Calculations ---
+    const estimatedCosts = 500; // Example fixed cost
+    const estimatedRevenue = 1200; // Example fixed revenue
+    const estimatedProfitability = estimatedRevenue - estimatedCosts;
+
+    // --- Update Output Display ---
+ costsOutputDiv.innerHTML = `Coûts estimés: ${estimatedCosts} €`;
+    revenueOutputDiv.innerHTML = `Revenus estimés: ${estimatedRevenue} €`;
+    profitabilityOutputDiv.innerHTML = `Rentabilité estimée: ${estimatedProfitability} €`;
+
+    // Call the function to fetch and display market prices
+ fetchMarketPrices();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+ setTimeout(initCharts, 1000);
+    setupNavigation();
+ setupAuth();
+    setupSettingsTabs();
+    setupGeolocation();
+ setupSettingsSave();
+ setupExternalDataIntegration();
+ setupWaterSettings();
+ setupAISettings();
+ setupProfessionalFeatures();
+
+    // Add event listeners to table headers for sorting
+ const tableHeaders = document.querySelectorAll('.history-table thead th');
+    tableHeaders.forEach((header, index) => {
+ header.addEventListener('click', () => {
+            if (currentSortColumn === index) {
+                currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = index;
+                currentSortOrder = 'asc';
+            }
+
+            tableHeaders.forEach(th => th.classList.remove('sorted-asc', 'sorted-desc'));
+ header.classList.add(`sorted-${currentSortOrder}`);
+ sortTable(currentSortColumn, currentSortOrder);
+ });
+    });
+});
+
+// Placeholder functions for professional features
+function createRotationPlan() {
+    const yearsInput = document.getElementById('rotation-years-input');
+    const cropsSelect = document.getElementById('rotation-crops-select');
+    const outputDiv = document.getElementById('rotation-plan-output');
+
+    const numberOfYears = parseInt(yearsInput.value);
+    const selectedOptions = Array.from(cropsSelect.selectedOptions);
+    const crops = selectedOptions.map(option => option.value);
+
+    if (isNaN(numberOfYears) || numberOfYears <= 0) {
+        alert('Veuillez entrer un nombre d\'années valide.');
+ displayRotationPlan([]); // Clear the table
+ return;
+    }
+
+    if (crops.length === 0) {
+        alert('Veuillez sélectionner au moins une culture.');
+ displayRotationPlan([]); // Clear the table
+ return;
+    }
+
+    const rotationPlanData = [];
+    for (let i = 0; i < numberOfYears; i++) {
+ rotationPlanData.push({ year: i + 1, crop: crops[i % crops.length] });
+    }
+
+ displayRotationPlan(rotationPlanData);
+}
+function startPhytosanitaryAssistant() {
+    if (!currentUser) {
+        alert("Veuillez vous connecter pour utiliser l'assistant phytosanitaire.");
+        return;
+    }
+
+    // Get input values
+    const selectedCrop = document.getElementById('phytosanitary-crop-select').value;
+    const problemDescription = document.getElementById('phytosanitary-problem-description').value.trim();
+
+    const resultsDiv = document.getElementById('phytosanitary-results');
+    resultsDiv.innerHTML = '<h3>Résultats de l\'assistant phytosanitaire</h3>'; // Clear previous results and add a heading
+
+    // Basic validation
+    if (!selectedCrop || selectedCrop === "") {
+        resultsDiv.innerHTML += "<p style='color: red;'>Veuillez sélectionner une culture.</p>";
+        return;
+    }
+
+    if (!problemDescription) {
+        resultsDiv.innerHTML += "<p style='color: red;'>Veuillez décrire le problème observé.</p>";
+        return;
+    }
+
+    // --- Placeholder Diagnosis and Recommendation Logic ---
+    // In a real application, this would involve:
+    // - Analyzing the problem description (text analysis).
+    // - Considering the selected crop.
+    // - Potentially integrating with sensor data (e.g., nutrient levels, humidity).
+    // - Accessing a knowledge base of pests/diseases and symptoms.
+    // - Using AI models for more accurate diagnosis.
+
+    let diagnosis = "Analyse en cours...";
+    let recommendation = "Veuillez patienter.";
+
+    // Very basic keyword matching for placeholder diagnosis
+    if (problemDescription.toLowerCase().includes('feuilles jaunes')) {
+        diagnosis = "Possible carence en azote ou problème d'humidité.";
+        recommendation = "Vérifiez les niveaux d'azote du sol et l'arrosage.";
+    } else if (problemDescription.toLowerCase().includes('taches sur les feuilles')) {
+        diagnosis = "Possible infection fongique.";
+        recommendation = "Envisagez l'application d'un fongicide adapté à la culture.";
+    } else if (problemDescription.toLowerCase().includes('insectes')) {
+        diagnosis = "Présence de ravageurs.";
+        recommendation = "Identifiez l'insecte pour un traitement spécifique.";
+    } else {
+        diagnosis = "Problème indéterminé pour le moment.";
+        recommendation = "Collectez plus d'informations ou consultez un expert local.";
+    }
+
+    // --- Update Output Display ---
+    resultsDiv.innerHTML += `
+        <p><strong>Culture sélectionnée:</strong> ${selectedCrop}</p>
+        <p><strong>Problème décrit:</strong> ${problemDescription}</p>
+        <h4>Diagnostic potentiel:</h4>
+        <p>${diagnosis}</p>
+        <h4>Recommandation:</h4>
+        <p>${recommendation}</p>
+    `;
+
+    // In a real implementation, you would replace this placeholder logic
+}
+function optimizeResources() {
+    if (!currentUser) {
+        alert("Veuillez vous connecter pour utiliser l'optimiseur de ressources.");
+        return;
+    }
+
+    // Get input values
+    const selectedGoal = document.getElementById('optimizer-goal-select').value;
+    const selectedCrop = document.getElementById('optimizer-crop-select').value;
+
+    const resultsDiv = document.getElementById('optimizer-results');
+    resultsDiv.innerHTML = '<h3>Suggestions d\'optimisation</h3>'; // Clear previous results and add a heading
+
+    // Basic validation
+    if (!selectedGoal || selectedGoal === "") {
+        resultsDiv.innerHTML += "<p style='color: red;'>Veuillez sélectionner un objectif d'optimisation.</p>";
+        return;
+    }
+
+    if (!selectedCrop || selectedCrop === "") {
+        resultsDiv.innerHTML += "<p style='color: red;'>Veuillez sélectionner une culture.</p>";
+        return;
+    }
+
+    // --- Placeholder Optimization Logic ---
+    let suggestion = "Analyse en cours...";
+
+    if (selectedGoal === 'Minimiser l\'utilisation d\'eau') {
+        suggestion = `Pour la culture de ${selectedCrop}, réduisez l'arrosage en fonction des prévisions météo et de l'humidité du sol.`;
+    } else if (selectedGoal === 'Minimiser le coût des engrais') {
+        suggestion = `Pour la culture de ${selectedCrop}, basez l'application d'engrais sur les besoins réels du sol (voir données des capteurs) et évitez les excès.`;
+    } else if (selectedGoal === 'Maximiser le rendement') {
+         suggestion = `Pour la culture de ${selectedCrop}, assurez des niveaux optimaux de nutriments et d'humidité du sol tout au long du cycle de croissance.`;
+    } else {
+        suggestion = "Aucune suggestion spécifique pour cet objectif et cette culture pour le moment.";
+    }
+    // --- Update Output Display ---
+ resultsDiv.innerHTML += `<p><strong>Objectif:</strong> ${selectedGoal}</p><p><strong>Culture:</strong> ${selectedCrop}</p><p><strong>Suggestion:</strong> ${suggestion}</p>`;
+}
+function openEconomicDashboard() { alert('Tableau de bord économique fonction sera bientôt disponible!'); }
+
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(initCharts, 1000);
     setupNavigation();
@@ -868,6 +1165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupWaterSettings();
     setupAISettings();
     setupProfessionalFeatures();
+    // openEconomicDashboard(); { alert('Tableau de bord économique fonction sera bientôt disponible!'); } // Removed duplicate call and alert
     
     // Add event listeners to table headers for sorting
     const tableHeaders = document.querySelectorAll('.history-table thead th');
@@ -886,6 +1184,315 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+function runScenarioSimulator() {
+    if (!currentUser) {
+        alert("Veuillez vous connecter pour lancer une simulation.");
+        return;
+    }
+
+    // Get input values
+    const selectedCrop = document.getElementById('simulator-crop-select').value;
+    const nitrogenChange = parseFloat(document.getElementById('simulator-nitrogen-input').value) || 0;
+    const phChange = parseFloat(document.getElementById('simulator-ph-input').value) || 0;
+    const temperatureChange = parseFloat(document.getElementById('simulator-temperature-input').value) || 0;
+    const humidityChange = parseFloat(document.getElementById('simulator-humidity-input').value) || 0;
+    const rainfallChange = parseFloat(document.getElementById('simulator-rainfall-input').value) || 0; // Assuming this is a percentage change
+
+    const resultsDiv = document.getElementById('simulation-results');
+    resultsDiv.innerHTML = '<h3>Résultats de la simulation</h3>'; // Clear previous results and add a heading
+
+    // --- Placeholder Simulation Logic ---
+    // In a real application, you would fetch the current sensor data
+    // and apply these changes to simulate the new conditions.
+    // Then, you would use a model or calculations to estimate the impact.
+
+    // For now, let\'s use some placeholder original values
+    const originalData = {
+        nitrogen: 120, // Placeholder original nitrogen
+        ph: 6.5,      // Placeholder original pH
+        temperature: 25, // Placeholder original temperature
+        humidity: 60,  // Placeholder original humidity
+        rainfall: 10   // Placeholder original rainfall (e.g., daily average in mm)
+    };
+
+    const simulatedData = {
+        nitrogen: originalData.nitrogen + nitrogenChange,
+        ph: originalData.ph + phChange,
+        temperature: originalData.temperature + temperatureChange,
+        humidity: originalData.humidity + humidityChange,
+        rainfall: originalData.rainfall * (1 + rainfallChange / 100) // Example: apply percentage change
+    };
+
+    // Placeholder estimated impact (replace with your logic)
+    const estimatedImpact = {
+        nitrogen: simulatedData.nitrogen > 150 ? "Positive" : (simulatedData.nitrogen < 100 ? "Negative" : "Neutral"),
+        ph: simulatedData.ph >= 6.0 && simulatedData.ph <= 7.0 ? "Positive" : "Negative",
+        temperature: simulatedData.temperature > 30 || simulatedData.temperature < 15 ? "Negative" : "Positive",
+        humidity: simulatedData.humidity > 70 || simulatedData.humidity < 50 ? "Negative" : "Positive",
+        rainfall: simulatedData.rainfall > 15 ? "Positive" : (simulatedData.rainfall < 5 ? "Negative" : "Neutral")
+    };
+
+    // --- Update Output Display ---
+    resultsDiv.innerHTML += `
+        <p><strong>Culture sélectionnée:</strong> ${selectedCrop}</p>
+        <h4>Changements simulés et impacts estimés:</h4>
+        <ul>
+            <li>
+                <strong>Azote (N):</strong>
+                Original: ${originalData.nitrogen}, Simulé: ${simulatedData.nitrogen.toFixed(1)}
+                Impact: ${estimatedImpact.nitrogen}
+            </li>
+            <li>
+                <strong>pH:</strong>
+                Original: ${originalData.ph}, Simulé: ${simulatedData.ph.toFixed(1)}
+                Impact: ${estimatedImpact.ph}
+            </li>
+            <li>
+                <strong>Température:</strong>
+                Original: ${originalData.temperature}°C, Simulé: ${simulatedData.temperature.toFixed(1)}°C
+                Impact: ${estimatedImpact.temperature}
+            </li>
+             <li>
+                <strong>Humidité:</strong>
+                Original: ${originalData.humidity}%, Simulé: ${simulatedData.humidity.toFixed(1)}%
+                Impact: ${estimatedImpact.humidity}
+            </li>
+             <li>
+                <strong>Précipitations:</strong>
+                Original: ${originalData.rainfall} mm, Simulé: ${simulatedData.rainfall.toFixed(1)} mm
+                Impact: ${estimatedImpact.rainfall}
+            </li>
+        </ul>
+    `;
+
+    // In a real implementation, you would fetch actual current sensor data
+    // const currentSensorData = /* Fetch from Firebase Realtime Database or Firestore */;
+    // Then use currentSensorData instead of placeholder originalData
+}
+
+function optimizeResources() {
+    if (!currentUser) {
+        alert("Veuillez vous connecter pour utiliser l'optimiseur de ressources.");
+        return;
+    }
+
+    // Get input values
+    const selectedGoal = document.getElementById('optimizer-goal-select').value;
+    const selectedCrop = document.getElementById('optimizer-crop-select').value;
+
+    const resultsDiv = document.getElementById('optimizer-results');
+    resultsDiv.innerHTML = '<h3>Suggestions d\'optimisation</h3>'; // Clear previous results and add a heading
+
+    // Basic validation
+    if (!selectedGoal || selectedGoal === "") {
+        resultsDiv.innerHTML += "<p style='color: red;'>Veuillez sélectionner un objectif d'optimisation.</p>";
+        return;
+    }
+
+    if (!selectedCrop || selectedCrop === "") {
+        resultsDiv.innerHTML += "<p style='color: red;'>Veuillez sélectionner une culture.</p>";
+        return;
+    }
+
+    // --- Placeholder Optimization Logic ---
+    let suggestion = "Analyse en cours...";
+
+    if (selectedGoal === 'Minimiser l\'utilisation d\'eau') {
+        suggestion = `Pour la culture de ${selectedCrop}, réduisez l'arrosage en fonction des prévisions météo et de l'humidité du sol.`;
+    } else if (selectedGoal === 'Minimiser le coût des engrais') {
+        suggestion = `Pour la culture de ${selectedCrop}, basez l'application d'engrais sur les besoins réels du sol (voir données des capteurs) et évitez les excès.`;
+    } else if (selectedGoal === 'Maximiser le rendement') {
+         suggestion = `Pour la culture de ${selectedCrop}, assurez des niveaux optimaux de nutriments et d'humidité du sol tout au long du cycle de croissance.`;
+    } else {
+        suggestion = "Aucune suggestion spécifique pour cet objectif et cette culture pour le moment.";
+    }
+    // --- Update Output Display ---
+    resultsDiv.innerHTML += `<p><strong>Objectif:</strong> ${selectedGoal}</p><p><strong>Culture:</strong> ${selectedCrop}</p><p><strong>Suggestion:</strong> ${suggestion}</p>`;
+}
+
+// Function to display the rotation plan in the table
+function displayRotationPlan(planData) {
+    const planTbody = document.getElementById('rotation-plan-tbody');
+    if (!planTbody) return;
+
+    planTbody.innerHTML = ''; // Clear previous plan
+
+    planData.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.year}</td>
+            <td>${item.crop}</td>
+        `;
+        planTbody.appendChild(row);
+    });
+}
+
+    // Get input values
+    const selectedGoal = document.getElementById('optimizer-goal-select').value;
+    const selectedCrop = document.getElementById('optimizer-crop-select').value;
+
+    const resultsDiv = document.getElementById('optimizer-results');
+    resultsDiv.innerHTML = '<h3>Suggestions d\'optimisation</h3>'; // Clear previous results and add a heading
+
+    // Basic validation
+    if (!selectedGoal || selectedGoal === "") {
+        resultsDiv.innerHTML += "<p style='color: red;'>Veuillez sélectionner un objectif d'optimisation.</p>";
+        return;
+    }
+
+    if (!selectedCrop || selectedCrop === "") {
+        resultsDiv.innerHTML += "<p style='color: red;'>Veuillez sélectionner une culture.</p>";
+        return;
+    }
+
+    // --- Placeholder Optimization Logic ---
+    let suggestion = "Analyse en cours...";
+
+    if (selectedGoal === 'Minimiser l\'utilisation d\'eau') {
+        suggestion = `Pour la culture de ${selectedCrop}, réduisez l'arrosage en fonction des prévisions météo et de l'humidité du sol.`;
+    } else if (selectedGoal === 'Minimiser le coût des engrais') {
+        suggestion = `Pour la culture de ${selectedCrop}, basez l'application d'engrais sur les besoins réels du sol (voir données des capteurs) et évitez les excès.`;
+    } else if (selectedGoal === 'Maximiser le rendement') {
+         suggestion = `Pour la culture de ${selectedCrop}, assurez des niveaux optimaux de nutriments et d'humidité du sol tout au long du cycle de croissance.`;
+    } else {
+        suggestion = "Aucune suggestion spécifique pour cet objectif et cette culture pour le moment.";
+    }
+    // --- Update Output Display ---
+    resultsDiv.innerHTML += `<p><strong>Objectif:</strong> ${selectedGoal}</p><p><strong>Culture:</strong> ${selectedCrop}</p><p><strong>Suggestion:</strong> ${suggestion}</p>`;
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(initCharts, 1000);
+    setupNavigation();
+    setupAuth();
+    setupSettingsTabs();
+    setupGeolocation();
+    setupSettingsSave();
+    setupExternalDataIntegration();
+    setupWaterSettings();
+    setupAISettings();
+    setupProfessionalFeatures();
+    openEconomicDashboard(); { alert('Tableau de bord économique fonction sera bientôt disponible!'); }
+    
+    // Add event listeners to table headers for sorting
+    const tableHeaders = document.querySelectorAll('.history-table thead th');
+    tableHeaders.forEach((header, index) => {
+        header.addEventListener('click', () => {
+            if (currentSortColumn === index) {
+                currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = index;
+                currentSortOrder = 'asc';
+            }
+
+            tableHeaders.forEach(th => th.classList.remove('sorted-asc', 'sorted-desc'));
+            header.classList.add(`sorted-${currentSortOrder}`);
+            sortTable(currentSortColumn, currentSortOrder);
+        });
+    });
+});
+
+function runScenarioSimulator() {
+    if (!currentUser) {
+        alert("Veuillez vous connecter pour lancer une simulation.");
+        return;
+    }
+
+    // Get input values
+    const selectedCrop = document.getElementById('simulator-crop-select').value;
+    const nitrogenChange = parseFloat(document.getElementById('simulator-nitrogen-input').value) || 0;
+    const phChange = parseFloat(document.getElementById('simulator-ph-input').value) || 0;
+    const temperatureChange = parseFloat(document.getElementById('simulator-temperature-input').value) || 0;
+    const humidityChange = parseFloat(document.getElementById('simulator-humidity-input').value) || 0;
+    const rainfallChange = parseFloat(document.getElementById('simulator-rainfall-input').value) || 0; // Assuming this is a percentage change
+
+    const resultsDiv = document.getElementById('simulation-results');
+    resultsDiv.innerHTML = '<h3>Résultats de la simulation</h3>'; // Clear previous results and add a heading
+
+    // --- Placeholder Simulation Logic ---
+    // In a real application, you would fetch the current sensor data
+    // and apply these changes to simulate the new conditions.
+    // Then, you would use a model or calculations to estimate the impact.
+
+    // For now, let's use some placeholder original values
+    const originalData = {
+        nitrogen: 120, // Placeholder original nitrogen
+        ph: 6.5,      // Placeholder original pH
+        temperature: 25, // Placeholder original temperature
+        humidity: 60,  // Placeholder original humidity
+        rainfall: 10   // Placeholder original rainfall (e.g., daily average in mm)
+    };
+
+    const simulatedData = {
+        nitrogen: originalData.nitrogen + nitrogenChange,
+        ph: originalData.ph + phChange,
+        temperature: originalData.temperature + temperatureChange,
+        humidity: originalData.humidity + humidityChange,
+        rainfall: originalData.rainfall * (1 + rainfallChange / 100) // Example: apply percentage change
+    };
+
+    // Placeholder estimated impact (replace with your logic)
+    const estimatedImpact = {
+        nitrogen: simulatedData.nitrogen > 150 ? "Positive" : (simulatedData.nitrogen < 100 ? "Negative" : "Neutral"),
+        ph: simulatedData.ph >= 6.0 && simulatedData.ph <= 7.0 ? "Positive" : "Negative",
+        temperature: simulatedData.temperature > 30 || simulatedData.temperature < 15 ? "Negative" : "Positive",
+        humidity: simulatedData.humidity > 70 || simulatedData.humidity < 50 ? "Negative" : "Positive",
+        rainfall: simulatedData.rainfall > 15 ? "Positive" : (simulatedData.rainfall < 5 ? "Negative" : "Neutral")
+    };
+
+    // --- Update Output Display ---
+    resultsDiv.innerHTML += `
+        <p><strong>Culture sélectionnée:</strong> ${selectedCrop}</p>
+        <h4>Changements simulés et impacts estimés:</h4>
+        <ul>
+            <li>
+                <strong>Azote (N):</strong>
+                Original: ${originalData.nitrogen}, Simulé: ${simulatedData.nitrogen.toFixed(1)}
+                Impact: ${estimatedImpact.nitrogen}
+            </li>
+            <li>
+                <strong>pH:</strong>
+                Original: ${originalData.ph}, Simulé: ${simulatedData.ph.toFixed(1)}
+                Impact: ${estimatedImpact.ph}
+            </li>
+            <li>
+                <strong>Température:</strong>
+                Original: ${originalData.temperature}°C, Simulé: ${simulatedData.temperature.toFixed(1)}°C
+                Impact: ${estimatedImpact.temperature}
+            </li>
+             <li>
+                <strong>Humidité:</strong>
+                Original: ${originalData.humidity}%, Simulé: ${simulatedData.humidity.toFixed(1)}%
+                Impact: ${estimatedImpact.humidity}
+            </li>
+             <li>
+                <strong>Précipitations:</strong>
+                Original: ${originalData.rainfall} mm, Simulé: ${simulatedData.rainfall.toFixed(1)} mm
+                Impact: ${estimatedImpact.rainfall}
+            </li>
+        </ul>
+    `;
+
+    // In a real implementation, you would fetch actual current sensor data
+    // const currentSensorData = /* Fetch from Firebase Realtime Database or Firestore */;
+    // Then use currentSensorData instead of placeholder originalData
+}
+
+// Function to display the rotation plan in the table
+function displayRotationPlan(planData) {
+    const planTbody = document.getElementById('rotation-plan-tbody');
+    if (!planTbody) return;
+
+    planTbody.innerHTML = ''; // Clear previous plan
+
+    planData.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.year}</td>
+            <td>${item.crop}</td>
+        `;
+        planTbody.appendChild(row);
+    });
+}
 
 // Variables for sorting historical data
 let currentSortColumn = -1;
