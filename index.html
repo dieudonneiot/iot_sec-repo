@@ -136,50 +136,43 @@
                                 <i class="fas fa-leaf"></i>
                             </div>
                         </div>
-                        <div class="card-value" id="nitrogen-value">128 mg/kg</div>
-                        <div class="card-status status-optimal">Optimal</div>
-                        <div class="card-trend">
-                            <i class="fas fa-arrow-up trend-up"></i>
-                            <span>2.5% depuis hier</span>
-                        </div>
+                        <div class="card-value" id="nitrogen-value">--</div>
+ <div class="card-status" id="nitrogen-status">Chargement...</div>
+ <div class="card-trend" id="nitrogen-trend"></div>
                     </div>
-                    
                     <div class="card">
                         <div class="card-header">
                             <div class="card-title">Phosphore (P)</div>
                             <div class="card-icon">
                                 <i class="fas fa-mountain"></i>
                             </div>
-                        </div>
-                        <div class="card-value" id="phosphorus-value">42 mg/kg</div>
-                        <div class="card-status status-warning">Moyen</div>
-                        <div class="card-trend">
-                            <i class="fas fa-arrow-down trend-down"></i>
-                            <span>1.2% depuis hier</span>
-                        </div>
+ </div>
+ <div class="card-value" id="phosphorus-value">--</div>
+ <div class="card-status" id="phosphorus-status">Chargement...</div>
+ <div class="card-trend" id="phosphorus-trend"></div>
                     </div>
-                    
                     <div class="card">
                         <div class="card-header">
                             <div class="card-title">Potassium (K)</div>
                             <div class="card-icon">
                                 <i class="fas fa-bolt"></i>
                             </div>
-                        </div>
-                        <div class="card-value" id="potassium-value">175 mg/kg</div>
-                        <div class="card-status status-optimal">Optimal</div>
-                        <div class="card-trend">
-                            <i class="fas fa-arrow-up trend-up"></i>
-                            <span>3.1% depuis hier</span>
-                        </div>
+ </div>
+ <div class="card-value" id="potassium-value">--</div>
+ <div class="card-status" id="potassium-status">Chargement...</div>
+ <div class="card-trend" id="potassium-trend"></div>
                     </div>
-                    
                     <div class="card">
                         <div class="card-header">
                             <div class="card-title">Température</div>
                             <div class="card-icon">
                                 <i class="fas fa-thermometer-half"></i>
                             </div>
+ </div>
+ <div class="card-value" id="temperature-value">--</div>
+ <div class="card-status" id="temperature-status">Chargement...</div>
+ <div class="card-trend" id="temperature-trend">
+ </div>
                         </div>
                         <div class="card-value" id="temperature-value">24.3°C</div>
                         <div class="card-status status-optimal">Optimal</div>
@@ -190,12 +183,10 @@
                     </div>
                     
                     <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">Humidité</div>
-                            <div class="card-icon">
-                                <i class="fas fa-tint"></i>
-                            </div>
-                        </div>
+ <div class="card-header">
+ <div class="card-title">Humidité</div>
+ <div class="card-icon"><i class="fas fa-tint"></i></div>
+ </div>
                         <div class="card-value" id="humidity-value">63%</div>
                         <div class="card-status status-optimal">Optimal</div>
                         <div class="card-trend">
@@ -204,12 +195,10 @@
                         </div>
                     </div>
                     
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">pH</div>
-                            <div class="card-icon">
-                                <i class="fas fa-flask"></i>
-                            </div>
+ <div class="card">
+ <div class="card-header">
+ <div class="card-title">pH</div>
+ <div class="card-icon"><i class="fas fa-flask"></i></div>
                         </div>
                         <div class="card-value" id="ph-value">6.1</div>
                         <div class="card-status status-warning">Légèrement acide</div>
@@ -219,13 +208,10 @@
                         </div>
                     </div>
                     
-                    <!-- Nouvelle carte pour les données externes -->
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">Météo actuelle</div>
-                            <div class="card-icon">
-                                <i class="fas fa-cloud-sun"></i>
-                            </div>
+ <div class="card">
+ <div class="card-header">
+ <div class="card-title">Météo actuelle</div>
+ <div class="card-icon"><i class="fas fa-cloud-sun"></i></div>
                         </div>
                         <div class="weather-info">
                             <div class="weather-icon">
@@ -233,27 +219,27 @@
                             </div>
                             <div class="weather-details">
                                 <div class="weather-temp" id="current-temp">24°C</div>
-                                <div class="weather-desc" id="weather-desc">Ensoleillé</div>
+                                <div class="weather-desc" id="weather-desc">--</div>
                                 <div class="weather-stats">
                                     <div class="weather-stat">
                                         <i class="fas fa-wind"></i>
-                                        <span id="wind-speed">12 km/h</span>
+                                        <span id="wind-speed">--</span>
                                     </div>
                                     <div class="weather-stat">
                                         <i class="fas fa-tint"></i>
-                                        <span id="humidity">65%</span>
+                                        <span id="weather-humidity">--</span>
                                     </div>
                                     <div class="weather-stat">
                                         <i class="fas fa-cloud-rain"></i>
-                                        <span id="precipitation">10%</span>
+                                        <span id="precipitation">--</span>
                                     </div>
                                     <div class="weather-stat">
                                         <i class="fas fa-sun"></i>
-                                        <span id="uv-index">Modéré</span>
+                                        <span id="uv-index">--</span>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+ </div>
                     </div>
                     
                     <div class="card">
@@ -304,115 +290,8 @@
                 </h2>
                 <p class="section-subtitle">Basé sur l'analyse de votre sol, voici les cultures les plus adaptées :</p>
                 
-                <div class="crops-grid">
-                    <!-- Crop 1 -->
-                    <div class="crop-card">
-                        <div class="crop-header">
-                            <div class="crop-name">Tomate</div>
-                            <div class="success-rate">92%</div>
-                        </div>
-                        <div class="crop-content">
-                            <div class="crop-parameter">
-                                <span class="param-label">Climat:</span>
-                                <span class="param-value">Tempéré</span>
-                            </div>
-                            <div class="crop-parameter">
-                                <span class="param-label">Sol idéal:</span>
-                                <span class="param-value">Léger, bien drainé</span>
-                            </div>
-                            <div class="crop-parameter">
-                                <span class="param-label">Saison:</span>
-                                <span class="param-value">Printemps-Été</span>
-                            </div>
-                            <div class="crop-parameter">
-                                <span class="param-label">pH optimal:</span>
-                                <span class="param-value">5.5 - 6.8</span>
-                            </div>
-                            
-                            <div class="recommendations">
-                                <h4><i class="fas fa-tasks"></i> Recommandations:</h4>
-                                <ul>
-                                    <li>Ajouter du compost pour améliorer la structure du sol</li>
-                                    <li>Appliquer un engrais riche en phosphore pour favoriser la floraison</li>
-                                    <li>Maintenir une humidité constante autour de 60-70%</li>
-                                    <li>Contrôler régulièrement le pH et ajuster si nécessaire</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Crop 2 -->
-                    <div class="crop-card">
-                        <div class="crop-header">
-                            <div class="crop-name">Maïs</div>
-                            <div class="success-rate">87%</div>
-                        </div>
-                        <div class="crop-content">
-                            <div class="crop-parameter">
-                                <span class="param-label">Climat:</span>
-                                <span class="param-value">Chaud</span>
-                            </div>
-                            <div class="crop-parameter">
-                                <span class="param-label">Sol idéal:</span>
-                                <span class="param-value">Profond, fertile</span>
-                            </div>
-                            <div class="crop-parameter">
-                                <span class="param-label">Saison:</span>
-                                <span class="param-value">Printemps-Été</span>
-                            </div>
-                            <div class="crop-parameter">
-                                <span class="param-label">pH optimal:</span>
-                                <span class="param-value">5.8 - 7.0</span>
-                            </div>
-                            
-                            <div class="recommendations">
-                                <h4><i class="fas fa-tasks"></i> Recommandations:</h4>
-                                <ul>
-                                    <li>Appliquer un engrais azoté pour stimuler la croissance</li>
-                                    <li>Assurer un bon drainage pour éviter la stagnation d'eau</li>
-                                    <li>Pailler pour conserver l'humidité et contrôler les mauvaises herbes</li>
-                                    <li>Éviter les sols trop compacts</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Crop 3 -->
-                    <div class="crop-card">
-                        <div class="crop-header">
-                            <div class="crop-name">Pomme de terre</div>
-                            <div class="success-rate">78%</div>
-                        </div>
-                        <div class="crop-content">
-                            <div class="crop-parameter">
-                                <span class="param-label">Climat:</span>
-                                <span class="param-value">Fraîs à tempéré</span>
-                            </div>
-                            <div class="crop-parameter">
-                                <span class="param-label">Sol idéal:</span>
-                                <span class="param-value">Sableux, bien drainé</span>
-                            </div>
-                            <div class="crop-parameter">
-                                <span class="param-label">Saison:</span>
-                                <span class="param-value">Printemps-Automne</span>
-                            </div>
-                            <div class="crop-parameter">
-                                <span class="param-label">pH optimal:</span>
-                                <span class="param-value">5.0 - 6.0</span>
-                            </div>
-                            
-                            <div class="recommendations">
-                                <h4><i class="fas fa-tasks"></i> Recommandations:</h4>
-                                <ul>
-                                    <li>Ajouter du soufre pour abaisser légèrement le pH</li>
-                                    <li>Appliquer un engrais riche en potassium pour améliorer la qualité des tubercules</li>
-                                    <li>Éviter les sols trop compacts</li>
-                                    <li>Maintenir une humidité constante durant la formation des tubercules</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <!-- Recommendations will be injected dynamically here -->
+                <div class="crops-grid"></div>
                 
                 <!-- Nouvelle section pour les données pédologiques avancées -->
                 <div class="data-card">
@@ -424,23 +303,23 @@
                             <i class="fas fa-sync-alt"></i>
                         </button>
                     </div>
-                    <div class="soil-properties">
-                        <div class="soil-property">
-                            <span class="soil-label">Texture du sol</span>
-                            <span class="soil-value" id="soil-texture">Argilo-limoneuse</span>
-                        </div>
-                        <div class="soil-property">
-                            <span class="soil-label">Matière organique</span>
-                            <span class="soil-value" id="organic-matter">2.8%</span>
-                        </div>
-                        <div class="soil-property">
-                            <span class="soil-label">CEC (Capacité d'échange cationique)</span>
-                            <span class="soil-value" id="cec">18.5 cmol+/kg</span>
-                        </div>
-                        <div class="soil-property">
-                            <span class="soil-label">Salinité</span>
-                            <span class="soil-value" id="salinity">0.8 dS/m</span>
-                        </div>
+ <div class="soil-properties">
+ <div class="soil-property">
+ <span class="soil-label">Texture du sol</span>
+ <span class="soil-value" id="soil-texture-value">--</span>
+ </div>
+ <div class="soil-property">
+ <span class="soil-label">Matière organique</span>
+ <span class="soil-value" id="organic-matter-value">--</span>
+ </div>
+ <div class="soil-property">
+ <span class="soil-label">CEC (Capacité d'échange cationique)</span>
+ <span class="soil-value" id="cec-value">--</span>
+ </div>
+ <div class="soil-property">
+ <span class="soil-label">Salinité</span>
+ <span class="soil-value" id="salinity-value">--</span>
+ </div>
                     </div>
                 </div>
                 
@@ -448,9 +327,7 @@
                 <div class="historical-data">
                     <h4><i class="fas fa-history"></i> Historique des Cultures</h4>
                     <div class="historical-items" id="crop-history">
-                        <!-- Les données historiques seront injectées ici -->
-                    </div>
-                </div>
+ <!-- Historical data will be injected dynamically here -->                    </div>                </div>
             </section>
             
             <!-- History Page -->

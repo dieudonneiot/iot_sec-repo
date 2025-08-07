@@ -1,19 +1,18 @@
 // Firebase configuration
 const firebaseConfig = {
-    apiKey: "AIzaSyAtBs1DjOspomLr7StY3us2F6sKkqwxu6w",
-    authDomain: "agrosmart-35284.firebaseapp.com",
-    databaseURL: "https://agrosmart-35284-default-rtdb.firebaseio.com",
-    projectId: "agrosmart-35284",
-    storageBucket: "agrosmart-35284.appspot.com",
-    messagingSenderId: "841659274599",
-    appId: "1:841659274599:web:8f5ada0bde5da4b9858bc2",
-    measurementId: "G-VDDJ3WM272"
+    apiKey: "AIzaSyB4EdKh-qyXqgyEYgGjfcO72EUxA2lcipQ",
+    authDomain: "sara-96cfb.firebaseapp.com",
+    projectId: "sara-96cfb",
+    storageBucket: "sara-96cfb.firebasestorage.app",
+    messagingSenderId: "707569060222",
+    appId: "1:707569060222:web:b595cf338827ba35fa8b2f",
+    measurementId: "G-CZWN5Y00D7"
 };
 
 // Initialize Firebase
 const app = firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const database = firebase.database();
+const auth = firebase.auth(); 
+const db = firebase.firestore();
 const analytics = firebase.analytics();
 
 // Déclarer les variables pour les graphiques
@@ -23,8 +22,11 @@ let tempHumidityChart;
 // Références Firebase
 let currentUser = null;
 let userSettings = null;
-let sensorReadingsListener = null;
+let sensorReadingsRealtimeListener = null;
 let chartsInitialized = false;
+
+// Variable to store historical data fetched from Firestore
+let historicalDataArray = [];
 
 // Initialize Charts avec vérification des éléments
 function initCharts() {
@@ -302,6 +304,36 @@ function resetAuthForms() {
     document.getElementById('register-error').style.display = 'none';
 }
 
+// Load settings from Firebase
+function loadSettings(userId) {
+    const settingsDocRef = db.collection('users').doc(userId).collection('settings').doc('userSettings');
+    settingsDocRef.get().then((doc) => {
+        if (doc.exists) {
+            userSettings = doc.data();
+            // Populate settings form fields
+            document.getElementById('language').value = userSettings.general?.language || '';
+            document.getElementById('unit-system').value = userSettings.general?.unitSystem || '';
+            document.getElementById('notification-frequency').value = userSettings.general?.notificationFrequency || '';
+
+            document.getElementById('latitude').value = userSettings.location?.latitude || '';
+            document.getElementById('longitude').value = userSettings.location?.longitude || '';
+            document.getElementById('altitude').value = userSettings.location?.altitude || '';
+            document.getElementById('soil-type').value = userSettings.location?.soilType || '';
+
+            document.getElementById('target-nitrogen').value = userSettings.soil?.targetNitrogen || '';
+            document.getElementById('target-phosphorus').value = userSettings.soil?.targetPhosphorus || '';
+            document.getElementById('target-potassium').value = userSettings.soil?.targetPotassium || '';
+            document.getElementById('target-ph').value = userSettings.soil?.targetPh || '';
+
+            console.log("User settings loaded:", userSettings);
+        } else {
+            console.log("No user settings found. Using default values.");
+        }
+    }).catch((error) => {
+        console.error("Error loading user settings:", error);
+    });
+}
+
 // Load user data
 function loadUserData() {
     showLoading(true);
@@ -311,6 +343,8 @@ function loadUserData() {
     document.getElementById('user-avatar').textContent = 
         document.getElementById('user-name').textContent.substring(0, 2).toUpperCase();
     
+    // Load user settings and apply filters if on history page
+    loadSettings(currentUser.uid);
     // Setup real-time data listener
     setupSensorReadingsListener();
     
@@ -323,10 +357,10 @@ function loadUserData() {
         initCharts();
     }
     
-    // Charger les données supplémentaires
+    // Charger les données supplémentaires (will be updated later)
     fetchWeatherData();
     fetchMarketPrices();
-    loadCropHistory();
+    applyFilters(); // Apply filters and load history data
     
     showLoading(false);
 }
@@ -458,9 +492,9 @@ function setupAuth() {
             resetAuthForms();
             
             // Remove listeners
-            if (sensorReadingsListener) {
-                sensorReadingsListener();
-                sensorReadingsListener = null;
+            if (sensorReadingsRealtimeListener) {
+                sensorReadingsRealtimeListener();
+                sensorReadingsRealtimeListener = null;
             }
         });
     });
@@ -481,31 +515,73 @@ function setupAuth() {
 // Sauvegarder les paramètres
 function setupSettingsSave() {
     document.getElementById('save-settings').addEventListener('click', () => {
-        alert('Paramètres enregistrés avec succès!');
+        if (!currentUser) {
+            console.error("Aucun utilisateur connecté. Impossible de sauvegarder les paramètres.");
+            alert("Veuillez vous connecter pour sauvegarder les paramètres.");
+            return;
+        }
+
+        const userId = currentUser.uid;
+        const settingsDocRef = db.collection('users').doc(userId).collection('settings').doc('userSettings');
+        
+        // Gather settings data
+        const settingsData = {
+            general: {
+                language: document.getElementById('language').value,
+                unitSystem: document.getElementById('unit-system').value,
+                notificationFrequency: document.getElementById('notification-frequency').value
+            },
+            location: {
+                latitude: document.getElementById('latitude').value,
+                longitude: document.getElementById('longitude').value,
+                altitude: document.getElementById('altitude').value,
+                soilType: document.getElementById('soil-type').value
+            },
+            soil: {
+                targetNitrogen: document.getElementById('target-nitrogen').value,
+                targetPhosphorus: document.getElementById('target-phosphorus').value,
+                targetPotassium: document.getElementById('target-potassium').value,
+                targetPh: document.getElementById('target-ph').value
+            }
+        };
+
+        // Save settings to Firebase
+        settingsDocRef.set(settingsData)
+            .then(() => {
+                alert('Paramètres enregistrés avec succès!');
+            })
+            .catch((error) => {
+                console.error("Erreur lors de la sauvegarde des paramètres:", error);
+                alert("Erreur lors de la sauvegarde des paramètres: " + error.message);
+            });
     });
 }
 
 // Écouter les données des capteurs en temps réel
 function setupSensorReadingsListener() {
     if (!currentUser) return;
-    
+
     // Chemin pour les données du capteur dans Realtime Database
-    const sensorRef = database.ref('sensorReadings');
-    
-    // Écoute des ajouts/modifications
-    sensorRef.orderByChild('timestamp').limitToLast(1).on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            // Obtenir la dernière lecture
-            const lastKey = Object.keys(data)[0];
-            const latestReading = data[lastKey];
-            
-            // Mettre à jour l'interface
-            updateSensorUI(latestReading);
-            
-            // Mettre à jour les graphiques
-            if (chartsInitialized) {
-                updateCharts(latestReading);
+    const sensorRef = firebase.database().ref('sensorReadings');
+
+    // Écoute des ajouts/modifications en temps réel
+    sensorReadingsRealtimeListener = sensorRef.orderByChild('timestamp').limitToLast(1).on('value', (snapshot) => {
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            if (data) {
+                // Obtenir la dernière lecture
+                const lastKey = Object.keys(data)[0];
+                const latestReading = data[lastKey];
+                
+                // Mettre à jour l'interface
+                updateSensorUI(latestReading);
+                
+                // Mettre à jour les graphiques
+                if (chartsInitialized) {
+                    updateCharts(latestReading);
+                }
+            } else {
+                console.log("Pas de données temps réel disponibles.");
             }
         }
     });
@@ -517,13 +593,13 @@ function updateSensorUI(data) {
     
     // Mettre à jour les valeurs des cartes
     if (data.nitrogen !== undefined) {
-        document.getElementById('nitrogen-value').textContent = `${data.nitrogen} mg/kg`;
+        document.getElementById('nitrogen-value').textContent = `${data.nitrogen || '-'}`;
     }
     if (data.phosphorus !== undefined) {
-        document.getElementById('phosphorus-value').textContent = `${data.phosphorus} mg/kg`;
+        document.getElementById('phosphorus-value').textContent = `${data.phosphorus || '-'}`;
     }
     if (data.potassium !== undefined) {
-        document.getElementById('potassium-value').textContent = `${data.potassium} mg/kg`;
+        document.getElementById('potassium-value').textContent = `${data.potassium || '-'}`;
     }
     if (data.temperature !== undefined) {
         document.getElementById('temperature-value').textContent = `${data.temperature.toFixed(1)}°C`;
@@ -532,49 +608,13 @@ function updateSensorUI(data) {
         document.getElementById('humidity-value').textContent = `${data.humidity}%`;
     }
     if (data.ph !== undefined) {
-        document.getElementById('ph-value').textContent = data.ph.toFixed(1);
+        document.getElementById('ph-value').textContent = data.ph !== undefined ? data.ph.toFixed(1) : '-';
     }
     
     // Mettre à jour les indicateurs de statut
     if (data.nitrogen !== undefined && data.phosphorus !== undefined && 
         data.potassium !== undefined && data.ph !== undefined) {
         updateStatusIndicators(data.nitrogen, data.phosphorus, data.potassium, data.ph);
-    }
-    
-    // Mettre à jour l'historique
-    updateHistoryTable(data);
-}
-
-// Mettre à jour le tableau historique
-function updateHistoryTable(data) {
-    const historyBody = document.getElementById('history-body');
-    
-    // Créer une nouvelle ligne pour la donnée actuelle
-    const date = new Date();
-    const formattedDate = date.toLocaleDateString('fr-FR', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-    });
-    
-    const row = document.createElement('tr');
-    row.innerHTML = `
-        <td>${formattedDate}</td>
-        <td>${data.nitrogen} mg/kg</td>
-        <td>${data.phosphorus} mg/kg</td>
-        <td>${data.potassium} mg/kg</td>
-        <td>${data.temperature.toFixed(1)}°C</td>
-        <td>${data.humidity}%</td>
-        <td>${data.ph.toFixed(1)}</td>
-        <td><span class="status-indicator status-${getStatusClass(data)}"></span> ${getStatusText(data)}</td>
-    `;
-    
-    // Ajouter la nouvelle ligne en haut du tableau
-    historyBody.insertBefore(row, historyBody.firstChild);
-    
-    // Limiter à 30 entrées
-    if (historyBody.children.length > 30) {
-        historyBody.removeChild(historyBody.lastChild);
     }
 }
 
@@ -598,135 +638,187 @@ function getStatusText(data) {
 
 // Fonctions pour la phase 2 - Données externes
 function fetchWeatherData() {
-    // Simuler des données météo
-    const weatherData = {
-        temperature: 24 + Math.floor(Math.random() * 4) - 2, // Entre 22-26°C
-        description: ['Ensoleillé', 'Partiellement nuageux', 'Nuageux'][Math.floor(Math.random() * 3)],
-        humidity: 60 + Math.floor(Math.random() * 10), // Entre 60-70%
-        wind: 10 + Math.floor(Math.random() * 8), // Entre 10-18 km/h
-        precipitation: Math.floor(Math.random() * 20), // 0-20%
-        uv: ['Faible', 'Modéré', 'Élevé'][Math.floor(Math.random() * 3)]
-    };
-    
-    // Mettre à jour l'interface
-    document.getElementById('current-temp').textContent = `${weatherData.temperature}°C`;
-    document.getElementById('weather-desc').textContent = weatherData.description;
-    document.getElementById('humidity').textContent = `${weatherData.humidity}%`;
-    document.getElementById('wind-speed').textContent = `${weatherData.wind} km/h`;
-    document.getElementById('precipitation').textContent = `${weatherData.precipitation}%`;
-    document.getElementById('uv-index').textContent = weatherData.uv;
-    
-    // Mettre à jour l'icône météo
-    const weatherIcon = document.querySelector('.weather-icon i');
-    if (weatherData.description.includes('Ensoleillé')) {
-        weatherIcon.className = 'fas fa-sun';
-    } else if (weatherData.description.includes('nuageux')) {
-        weatherIcon.className = 'fas fa-cloud';
-    } else {
-        weatherIcon.className = 'fas fa-cloud-sun';
-    }
+    // Placeholder for actual API call
 }
 
 function fetchMarketPrices() {
-    // Simuler des prix de marché
-    const crops = [
-        { name: 'Blé', price: 210, change: (Math.random() - 0.5) * 5 },
-        { name: 'Maïs', price: 185, change: (Math.random() - 0.5) * 4 },
-        { name: 'Soja', price: 480, change: (Math.random() - 0.5) * 6 },
-        { name: 'Tournesol', price: 390, change: (Math.random() - 0.5) * 5 },
-        { name: 'Colza', price: 420, change: (Math.random() - 0.5) * 4 },
-        { name: 'Orge', price: 195, change: (Math.random() - 0.5) * 3 }
-    ];
-    
     const container = document.getElementById('market-prices');
-    container.innerHTML = '';
-    
-    crops.forEach(crop => {
-        const changeClass = crop.change >= 0 ? 'change-up' : 'change-down';
-        const changeIcon = crop.change >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
-        
-        const priceItem = document.createElement('div');
-        priceItem.className = 'price-item';
-        priceItem.innerHTML = `
-            <div class="price-crop">${crop.name}</div>
-            <div class="price-value">${crop.price} €/t</div>
-            <div class="price-change ${changeClass}">
-                <i class="fas ${changeIcon}"></i> ${Math.abs(crop.change).toFixed(1)}%
-            </div>
-        `;
-        container.appendChild(priceItem);
-    });
+    // Placeholder for actual API call
 }
 
-function loadCropHistory() {
-    const historyData = [
-        { year: 2023, crop: 'Blé', yield: 65 },
-        { year: 2022, crop: 'Maïs', yield: 85 },
-        { year: 2021, crop: 'Soja', yield: 35 },
-        { year: 2020, crop: 'Jachère', yield: 0 },
-        { year: 2019, crop: 'Orge', yield: 60 }
+function applyFilters() {
+    const periodFilter = document.getElementById('filter-period').value;
+    const parameterFilter = document.getElementById('filter-parameter').value;
+    const zoneFilter = document.getElementById('filter-zone').value;
+
+    loadCropHistory(periodFilter, parameterFilter, zoneFilter);
+}
+
+// Load historical sensor data from Firestore
+function loadCropHistory(period, parameter, zone) {
+    const historyBody = document.getElementById('history-body');
+    if (!historyBody) return;
+
+    historyBody.innerHTML = '';
+
+    if (!currentUser) return;
+    let query = db.collection('users').doc(currentUser.uid).collection('sensorReadings');
+    
+    // Apply period filter
+    const now = Date.now();
+    let startTime;
+    switch (period) {
+        case 'Toute la période':
+            query = query.limit(500);
+            break;
+        case '7 derniers jours':
+            startTime = now - (7 * 24 * 60 * 60 * 1000);
+            break;
+        case '30 derniers jours':
+            startTime = now - (30 * 24 * 60 * 60 * 1000);
+            break;
+        case '3 derniers mois':
+            startTime = now - (90 * 24 * 60 * 60 * 1000);
+            break;
+        case '6 derniers mois':
+            startTime = now - (180 * 24 * 60 * 60 * 1000);
+            break;
+        case '1 année':
+            startTime = now - (365 * 24 * 60 * 60 * 1000);
+            break;
+    }
+
+    if (startTime) {
+        query = query.where('timestamp', '>=', startTime);
+    }
+
+    // Order by timestamp
+    query = query.orderBy('timestamp', 'desc');
+
+    // Apply zone filter
+    if (zone && zone !== 'Toutes les zones') {
+        query = query.where('zone', '==', zone);
+    }
+
+    const selectedParameter = parameter;
+
+    query.get()
+        .then((snapshot) => {
+            if (!snapshot.empty) {
+                historicalDataArray = snapshot.docs.map(doc => doc.data());
+                // Apply client-side parameter filtering
+                if (selectedParameter !== 'Tous les paramètres') {
+                    const dataField = selectedParameter.toLowerCase().split(' ')[0];
+                    historicalDataArray = historicalDataArray.filter(data => data[dataField] !== undefined);
+                }
+                // Add statusText field for sorting
+                historicalDataArray.forEach(item => {
+                    item.statusText = getStatusText(item);
+                });
+
+                displayHistoryTable(historicalDataArray);
+            } else {
+                console.log('Aucune donnée historique trouvée pour les filtres sélectionnés.');
+                historicalDataArray = [];
+                displayHistoryTable([]);
+            }
+        })
+        .catch((error) => {
+            console.error('Erreur lors du chargement des données historiques:', error);
+            historicalDataArray = [];
+            displayHistoryTable([]);
+        });
+}
+
+// Function to sort historical data table
+function sortTable(columnIndex, sortOrder) {
+    if (!historicalDataArray || historicalDataArray.length === 0) {
+        return;
+    }
+
+    const columnKeys = [
+        'timestamp', 'nitrogen', 'phosphorus', 'potassium', 
+        'temperature', 'humidity', 'ph', 'statusText'
     ];
-    
-    const container = document.getElementById('crop-history');
-    container.innerHTML = '';
-    
-    historyData.forEach(item => {
-        const historyItem = document.createElement('div');
-        historyItem.className = 'historical-item';
-        historyItem.innerHTML = `
-            <div class="historical-year">${item.year}</div>
-            <div class="historical-crop">${item.crop}</div>
-            <div class="historical-yield">${item.yield > 0 ? item.yield + ' q/ha' : '-'}</div>
+
+    const sortKey = columnKeys[columnIndex];
+
+    historicalDataArray.sort((a, b) => {
+        const aValue = a[sortKey];
+        const bValue = b[sortKey];
+
+        let comparison = 0;
+        if (aValue === undefined || bValue === undefined) {
+            if (aValue === undefined && bValue !== undefined) comparison = -1;
+            else if (aValue !== undefined && bValue === undefined) comparison = 1;
+        } else if (typeof aValue === 'string' && typeof bValue === 'string') {
+            comparison = aValue.localeCompare(bValue);
+        } else {
+            comparison = aValue - bValue;
+        }
+
+        if (sortOrder === 'desc') {
+            comparison *= -1;
+        }
+
+        return comparison;
+    });
+
+    displayHistoryTable(historicalDataArray);
+}
+
+// Function to display historical data in the table
+function displayHistoryTable(data) {
+    const historyBody = document.getElementById('history-body');
+    if (!historyBody) return;
+
+    historyBody.innerHTML = '';
+
+    data.forEach(item => {
+        const date = new Date(item.timestamp);
+        const formattedDate = date.toLocaleDateString('fr-FR', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${formattedDate}</td>
+            <td>${item.nitrogen !== undefined ? item.nitrogen + ' mg/kg' : '-'}</td>
+            <td>${item.phosphorus !== undefined ? item.phosphorus + ' mg/kg' : '-'}</td>
+            <td>${item.potassium !== undefined ? item.potassium + ' mg/kg' : '-'}</td>
+            <td>${item.temperature !== undefined ? item.temperature.toFixed(1) + '°C' : '-'}</td>
+            <td>${item.humidity !== undefined ? item.humidity + '%' : '-'}</td>
+            <td>${item.ph !== undefined ? item.ph.toFixed(1) : '-'}</td>
+            <td><span class="status-indicator status-${getStatusClass(item)}"></span> ${getStatusText(item)}</td>
         `;
-        container.appendChild(historyItem);
+        historyBody.appendChild(row);
     });
 }
 
 function setupExternalDataIntegration() {
-    // Boutons pour les API externes
     document.getElementById('connect-weather').addEventListener('click', () => {
-        const apiKey = document.getElementById('weather-api-key').value;
-        if (apiKey) {
-            document.getElementById('weather-status').className = 'api-status';
-            alert('Service météo connecté avec succès!');
-        } else {
-            alert('Veuillez entrer une clé API valide');
-        }
+        // Placeholder for actual API connection
     });
     
     document.getElementById('connect-market').addEventListener('click', () => {
-        const apiKey = document.getElementById('market-api-key').value;
-        if (apiKey) {
-            document.getElementById('market-status').className = 'api-status';
-            alert('Données de marché connectées avec succès!');
-        } else {
-            alert('Veuillez entrer une clé API valide');
-        }
+        // Placeholder for actual API connection
     });
     
     document.getElementById('connect-satellite').addEventListener('click', () => {
-        const apiKey = document.getElementById('satellite-api-key').value;
-        if (apiKey) {
-            document.getElementById('satellite-status').className = 'api-status';
-            alert('Données satellitaires connectées avec succès!');
-        } else {
-            alert('Veuillez entrer une clé API valide');
-        }
+        // Placeholder for actual API connection
     });
     
     // Boutons de test
     document.getElementById('test-weather').addEventListener('click', () => {
         fetchWeatherData();
-        alert('Données météo test récupérées avec succès!');
     });
     
     document.getElementById('test-market').addEventListener('click', () => {
         fetchMarketPrices();
-        alert('Prix de marché test récupérés avec succès!');
-    });
-    
-    document.getElementById('test-satellite').addEventListener('click', () => {
-        alert('Données satellitaires test récupérées avec succès!');
     });
 }
 
@@ -761,35 +853,40 @@ function setupAISettings() {
 
 // Phase 3 - Fonctionnalités professionnelles
 function setupProfessionalFeatures() {
-    // Boutons pour les fonctionnalités professionnelles
-    const featureButtons = document.querySelectorAll('.feature-btn');
-    featureButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const featureName = button.closest('.feature-card').querySelector('h4').textContent;
-            alert(`Fonctionnalité "${featureName}" sera bientôt disponible!`);
-        });
-    });
+    // Add event listeners to professional feature buttons
 }
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialiser les graphiques plus tard, après le chargement complet
     setTimeout(initCharts, 1000);
-    
     setupNavigation();
     setupAuth();
     setupSettingsTabs();
     setupGeolocation();
     setupSettingsSave();
-    
-    // Phase 2 - Nouveaux modules
     setupExternalDataIntegration();
     setupWaterSettings();
     setupAISettings();
-    
-    // Phase 3 - Fonctionnalités professionnelles
     setupProfessionalFeatures();
     
-    // Set initial status indicators
-    updateStatusIndicators(128, 42, 175, 6.1);
-});// Add your JavaScript code here
+    // Add event listeners to table headers for sorting
+    const tableHeaders = document.querySelectorAll('.history-table thead th');
+    tableHeaders.forEach((header, index) => {
+        header.addEventListener('click', () => {
+            if (currentSortColumn === index) {
+                currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = index;
+                currentSortOrder = 'asc';
+            }
+
+            tableHeaders.forEach(th => th.classList.remove('sorted-asc', 'sorted-desc'));
+            header.classList.add(`sorted-${currentSortOrder}`);
+            sortTable(currentSortColumn, currentSortOrder);
+        });
+    });
+});
+
+// Variables for sorting historical data
+let currentSortColumn = -1;
+let currentSortOrder = 'asc';
